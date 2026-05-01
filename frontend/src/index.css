@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure AG Grid fills its container */
+.ag-theme-alpine {
+  --ag-font-family: inherit;
+}
+
+/* AG Grid row selection highlight */
+.ag-theme-alpine .ag-row-selected {
+  background-color: #eff6ff !important;
+}
+
+/* Toast slide-in animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out;
+}
