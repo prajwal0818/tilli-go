@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
+import { ProjectContext } from "../../App";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { refreshProjects } = useContext(ProjectContext);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -18,6 +20,7 @@ export default function Login() {
       const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      await refreshProjects();
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
