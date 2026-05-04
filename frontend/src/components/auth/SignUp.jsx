@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
+import { ProjectContext } from "../../App";
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const { refreshProjects } = useContext(ProjectContext);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +31,7 @@ export default function SignUp() {
       const res = await api.post("/auth/register", { name, email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      await refreshProjects();
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed");
