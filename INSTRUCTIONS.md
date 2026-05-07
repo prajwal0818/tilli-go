@@ -162,7 +162,9 @@ docker compose logs -f frontend
 ### 4. Seed Database (Optional)
 
 ```bash
-docker compose exec api node prisma/seed.js
+# From the host machine (tsx + seed.ts require dev dependencies not in the Docker image)
+cd backend
+DATABASE_URL="postgresql://deployflow:$POSTGRES_PASSWORD@localhost:${POSTGRES_PORT:-5438}/deployflow" npm run db:seed
 # Creates 2 projects (Q3-PROD, PLAT-MIG) with 5 tasks and dependencies
 ```
 
@@ -408,7 +410,7 @@ The frontend uses **HashRouter** for compatibility with reverse proxies and VS C
 
 ### Global Project State
 
-The `ProjectContext` in `App.jsx` provides:
+The `ProjectContext` in `App.tsx` provides:
 - `projects` — Full list of projects (fetched on app load)
 - `selectedProjectId` — Currently active project (persisted in localStorage)
 - `setSelectedProjectId` — Function to change active project

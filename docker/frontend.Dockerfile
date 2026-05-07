@@ -7,7 +7,7 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 ENV PUBLIC_URL=.
 
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm ci --legacy-peer-deps
 
 COPY frontend/ .
 RUN npm run build

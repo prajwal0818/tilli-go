@@ -12,6 +12,16 @@
   background-color: #eff6ff !important;
 }
 
+/* DateTime editable cell affordances */
+.ag-cell:hover .datetime-edit-icon {
+  opacity: 1 !important;
+}
+
+.ag-cell:hover .datetime-cell-editable {
+  background-color: #f9fafb;
+  border-radius: 3px;
+}
+
 /* Toast slide-in animation */
 @keyframes slide-in {
   from {

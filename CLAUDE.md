@@ -13,11 +13,11 @@ Five services: `frontend`, `api`, `worker`, `postgres`, `redis`.
 
 ## Project Structure
 ```
-backend/   server.js, prisma/schema.prisma, prisma/seed.js
-  src/     app.js, config/, controllers/, routes/, middleware/, services/, validators/, utils/
-worker/    index.js, src/processors/, src/queues/, src/services/, src/config/
-frontend/  src/App.jsx, components/{auth,landing,dashboard,grid,projects,acknowledge,layout,profile}/
-  src/     hooks/useTaskData, services/api.js, utils/constants.js
+backend/   server.ts, prisma/schema.prisma, prisma/seed.ts
+  src/     app.ts, config/, controllers/, routes/, middleware/, services/, validators/, utils/
+worker/    index.ts, src/processors/, src/queues/, src/services/, src/config/
+frontend/  src/App.tsx, components/{auth,landing,dashboard,grid,projects,acknowledge,layout,profile}/
+  src/     hooks/useTaskData, services/api.ts, utils/constants.ts
 docker/    docker-compose.yml, *.Dockerfile, api-entrypoint.sh, nginx/nginx.conf, .env
 ```
 

@@ -22,4 +22,4 @@ while [ "$attempt" -le "$MAX_RETRIES" ]; do
 done
 
 echo "Starting API server..."
-exec node server.js
+exec node dist/server.js
