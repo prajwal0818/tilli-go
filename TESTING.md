@@ -792,7 +792,9 @@ curl -s http://localhost:3004/api/auth/login \
 ### Seed Database in Docker
 
 ```bash
-docker compose exec api node prisma/seed.js
+# From the host machine (tsx + seed.ts require dev dependencies not in the Docker image)
+cd backend
+DATABASE_URL="postgresql://deployflow:$POSTGRES_PASSWORD@localhost:${POSTGRES_PORT:-5438}/deployflow" npm run db:seed
 # Expected: "Seeded 2 projects with 5 tasks and dependencies"
 ```
 

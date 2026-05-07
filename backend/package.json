@@ -2,12 +2,14 @@
   "name": "deployflow-backend",
   "version": "1.0.0",
   "description": "DeployFlow API server",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
     "db:migrate": "npx prisma migrate dev",
-    "db:seed": "node prisma/seed.js",
+    "db:seed": "tsx prisma/seed.ts",
     "db:generate": "npx prisma generate"
   },
   "dependencies": {
@@ -24,7 +26,14 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.6.0",
     "nodemon": "^3.1.7",
-    "prisma": "^5.20.0"
+    "prisma": "^5.20.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
   }
 }
