@@ -2,7 +2,7 @@ import { useCallback, useRef, useMemo, useContext, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
-import type { ColDef, CellValueChangedEvent, GetRowIdParams } from 'ag-grid-community';
+import type { ColDef, CellValueChangedEvent, GetRowIdParams, RowClassParams } from 'ag-grid-community';
 import { columnDefs } from './columnDefs';
 import { useTaskData } from '../../hooks/useTaskData';
 import { ProjectContext } from '../../App';
@@ -131,6 +131,14 @@ export default function TaskGrid() {
 
   const getRowId = useCallback((params: GetRowIdParams<Task>) => params.data.id, []);
 
+  const rowClassRules = useMemo(() => ({
+    'row-status-pending':      (params: RowClassParams<Task>) => params.data?.status === 'Pending',
+    'row-status-triggered':    (params: RowClassParams<Task>) => params.data?.status === 'Triggered',
+    'row-status-acknowledged': (params: RowClassParams<Task>) => params.data?.status === 'Acknowledged',
+    'row-status-completed':    (params: RowClassParams<Task>) => params.data?.status === 'Completed',
+    'row-status-blocked':      (params: RowClassParams<Task>) => params.data?.status === 'Blocked',
+  }), []);
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (!selectedProjectId) {
@@ -192,6 +200,7 @@ export default function TaskGrid() {
           defaultColDef={defaultColDef}
           rowData={tasks}
           getRowId={getRowId}
+          rowClassRules={rowClassRules}
           rowSelection="multiple"
           onCellValueChanged={onCellValueChanged}
           singleClickEdit
