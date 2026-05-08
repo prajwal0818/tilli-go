@@ -5,11 +5,67 @@
 /* Ensure AG Grid fills its container */
 .ag-theme-alpine {
   --ag-font-family: inherit;
+
+  /* Row highlight: left border accents */
+  --row-border-pending:      #9ca3af;
+  --row-border-triggered:    #3b82f6;
+  --row-border-acknowledged: #f59e0b;
+  --row-border-completed:    #22c55e;
+  --row-border-blocked:      #ef4444;
+
+  /* Row highlight: background tints (4-5% opacity) */
+  --row-bg-pending:          rgba(156, 163, 175, 0.04);
+  --row-bg-triggered:        rgba(59, 130, 246, 0.04);
+  --row-bg-acknowledged:     rgba(245, 158, 11, 0.04);
+  --row-bg-completed:        rgba(34, 197, 94, 0.04);
+  --row-bg-blocked:          rgba(239, 68, 68, 0.05);
 }
 
 /* AG Grid row selection highlight */
 .ag-theme-alpine .ag-row-selected {
   background-color: #eff6ff !important;
+}
+
+/* ── Status row highlights (SAP UI5 semantic rows) ──────────────────── */
+.ag-theme-alpine .ag-row.row-status-pending {
+  background-color: var(--row-bg-pending);
+  box-shadow: inset 3px 0 0 0 var(--row-border-pending);
+}
+.ag-theme-alpine .ag-row.row-status-triggered {
+  background-color: var(--row-bg-triggered);
+  box-shadow: inset 3px 0 0 0 var(--row-border-triggered);
+}
+.ag-theme-alpine .ag-row.row-status-acknowledged {
+  background-color: var(--row-bg-acknowledged);
+  box-shadow: inset 3px 0 0 0 var(--row-border-acknowledged);
+}
+.ag-theme-alpine .ag-row.row-status-completed {
+  background-color: var(--row-bg-completed);
+  box-shadow: inset 3px 0 0 0 var(--row-border-completed);
+  opacity: 0.55;
+}
+.ag-theme-alpine .ag-row.row-status-blocked {
+  background-color: var(--row-bg-blocked);
+  box-shadow: inset 3px 0 0 0 var(--row-border-blocked);
+}
+
+/* Preserve left border on selected rows */
+.ag-theme-alpine .ag-row-selected.row-status-pending      { box-shadow: inset 3px 0 0 0 var(--row-border-pending)      !important; }
+.ag-theme-alpine .ag-row-selected.row-status-triggered    { box-shadow: inset 3px 0 0 0 var(--row-border-triggered)    !important; }
+.ag-theme-alpine .ag-row-selected.row-status-acknowledged { box-shadow: inset 3px 0 0 0 var(--row-border-acknowledged) !important; }
+.ag-theme-alpine .ag-row-selected.row-status-completed    { box-shadow: inset 3px 0 0 0 var(--row-border-completed)    !important; }
+.ag-theme-alpine .ag-row-selected.row-status-blocked      { box-shadow: inset 3px 0 0 0 var(--row-border-blocked)      !important; }
+
+/* Preserve left border on hover */
+.ag-theme-alpine .ag-row:hover.row-status-pending      { box-shadow: inset 3px 0 0 0 var(--row-border-pending); }
+.ag-theme-alpine .ag-row:hover.row-status-triggered    { box-shadow: inset 3px 0 0 0 var(--row-border-triggered); }
+.ag-theme-alpine .ag-row:hover.row-status-acknowledged { box-shadow: inset 3px 0 0 0 var(--row-border-acknowledged); }
+.ag-theme-alpine .ag-row:hover.row-status-completed    { box-shadow: inset 3px 0 0 0 var(--row-border-completed); }
+.ag-theme-alpine .ag-row:hover.row-status-blocked      { box-shadow: inset 3px 0 0 0 var(--row-border-blocked); }
+
+/* Suppress hover highlight on completed rows */
+.ag-theme-alpine .ag-row.row-status-completed:hover {
+  background-color: var(--row-bg-completed) !important;
 }
 
 /* DateTime editable cell affordances */
@@ -20,6 +76,15 @@
 .ag-cell:hover .datetime-cell-editable {
   background-color: #f9fafb;
   border-radius: 3px;
+}
+
+/* Status editable cell affordances */
+.ag-cell:hover .status-edit-icon {
+  opacity: 1 !important;
+}
+
+.ag-cell:hover .status-cell-editable {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
 /* Toast slide-in animation */
