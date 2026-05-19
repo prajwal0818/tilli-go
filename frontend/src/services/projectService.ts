@@ -11,4 +11,7 @@ export const projectService = {
 
   deleteProject: (id: string): Promise<AxiosResponse<void>> =>
     api.delete(`/projects/${id}`),
+
+  batchDeleteProjects: (ids: string[]): Promise<AxiosResponse<{ deleted: number }>> =>
+    api.post('/projects/batch-delete', { ids }),
 };

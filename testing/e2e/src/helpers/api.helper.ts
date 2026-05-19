@@ -112,8 +112,8 @@ export class ApiHelper {
     return this.request<Project>('POST', '/api/projects', { name, code, description });
   }
 
-  async listProjects(): Promise<PaginatedResponse<Project>> {
-    return this.request<PaginatedResponse<Project>>('GET', '/api/projects');
+  async listProjects(limit: number = 200): Promise<PaginatedResponse<Project>> {
+    return this.request<PaginatedResponse<Project>>('GET', `/api/projects?limit=${limit}`);
   }
 
   async deleteProject(id: string): Promise<void> {
@@ -140,6 +140,36 @@ export class ApiHelper {
 
   async listTasks(projectId: string): Promise<PaginatedResponse<Task>> {
     return this.request<PaginatedResponse<Task>>('GET', `/api/tasks?projectId=${projectId}`);
+  }
+
+  // ── Convenience wrappers ─────────────────────────────────────────────
+
+  async setTaskDependencies(taskId: string, dependencyIds: string[]): Promise<Task> {
+    return this.updateTask(taskId, { dependencies: dependencyIds });
+  }
+
+  async setTaskStatus(taskId: string, status: string): Promise<Task> {
+    return this.updateTask(taskId, { status });
+  }
+
+  /**
+   * Raw fetch that returns { status, body } instead of throwing.
+   * Useful for negative tests that expect specific error codes.
+   */
+  async updateTaskExpectError(
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<{ status: number; body: Record<string, unknown> }> {
+    const res = await fetch(`${this.baseUrl}/api/tasks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const body = await res.json();
+    return { status: res.status, body };
   }
 
   // ── Scheduler ─────────────────────────────────────────────────────────

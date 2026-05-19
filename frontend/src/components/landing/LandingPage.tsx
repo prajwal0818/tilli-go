@@ -1,5 +1,49 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, useInView, type Variants } from 'framer-motion';
+
+/* ─── animation helpers ──────────────────────────────────────────────── */
+
+const EASE_OUT: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94];
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.1, duration: 0.6, ease: EASE_OUT },
+  }),
+};
+
+const staggerContainer: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+};
+
+function AnimatedSection({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={inView ? 'visible' : 'hidden'}
+      variants={staggerContainer}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ─── data ───────────────────────────────────────────────────────────── */
 
 interface Feature {
   title: string;
@@ -61,119 +105,275 @@ const steps: Step[] = [
   { title: 'Auto-Orchestrate', desc: 'The scheduler triggers tasks, sends emails, and tracks completion.' },
 ];
 
+/* ─── main component ─────────────────────────────────────────────────── */
+
 export default function LandingPage() {
   const isLoggedIn = !!localStorage.getItem('token');
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-8 py-4 max-w-6xl mx-auto">
-        <span className="text-xl font-bold text-gray-900">DeployFlow</span>
-        <div className="flex items-center gap-3">
-          {isLoggedIn ? (
-            <Link
-              to="/dashboard"
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Go to Dashboard
-            </Link>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Get Started
-              </Link>
-            </>
-          )}
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
-        <div className="max-w-4xl mx-auto px-8 py-24 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
-            Deployment Orchestration,
-            <br />
-            Simplified
-          </h1>
-          <p className="mt-4 text-lg text-blue-100 max-w-2xl mx-auto">
-            Replace spreadsheets with an automated, event-driven platform.
-            Manage tasks, resolve dependencies, and track deployments in real time.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-4">
+      {/* ── Navbar ──────────────────────────────────────────────────── */}
+      <motion.nav
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 border-b border-stone-100"
+        initial={{ y: -80 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.6, ease: EASE_OUT }}
+      >
+        <div className="flex items-center justify-between px-8 py-4 max-w-6xl mx-auto">
+          <motion.span
+            className="text-xl font-bold text-stone-900 tracking-tight"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            Deploy<span className="text-teal-700">Flow</span>
+          </motion.span>
+          <motion.div
+            className="flex items-center gap-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
             {isLoggedIn ? (
               <Link
                 to="/dashboard"
-                className="px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+                className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
               >
                 Go to Dashboard
               </Link>
             ) : (
               <>
                 <Link
+                  to="/login"
+                  className="px-4 py-2 text-sm font-medium text-stone-700 hover:text-stone-900 transition-colors cursor-pointer"
+                >
+                  Login
+                </Link>
+                <Link
                   to="/signup"
-                  className="px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+                  className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
+          </motion.div>
+        </div>
+      </motion.nav>
+
+      {/* ── Hero ────────────────────────────────────────────────────── */}
+      <section
+        className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-stone-900 via-stone-800 to-teal-900"
+      >
+        <div
+          className="relative z-10 max-w-5xl mx-auto px-8 pt-24 pb-20 text-center"
+        >
+          {/* Badge */}
+          <motion.div
+            className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            <span className="text-sm text-stone-300 font-medium">
+              Deployment Orchestration Platform
+            </span>
+          </motion.div>
+
+          {/* Headline */}
+          <motion.h1
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.7, ease: EASE_OUT }}
+          >
+            Deploy with confidence,
+            <br />
+            not spreadsheets
+          </motion.h1>
+
+          {/* Subheading */}
+          <motion.p
+            className="mt-6 text-lg sm:text-xl text-stone-300 max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.6 }}
+          >
+            Replace fragile spreadsheets with an automated, event-driven platform.
+            Manage tasks, resolve dependencies, and track deployments in real time.
+          </motion.p>
+
+          {/* CTAs */}
+          <motion.div
+            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+          >
+            {isLoggedIn ? (
+              <Link
+                to="/dashboard"
+                className="group px-8 py-3.5 bg-white text-teal-800 font-semibold rounded-xl hover:bg-teal-50 transition-all duration-300 cursor-pointer shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              >
+                Go to Dashboard
+                <span className="inline-block ml-2 transition-transform duration-300 group-hover:translate-x-1">
+                  &rarr;
+                </span>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/signup"
+                  className="group px-8 py-3.5 bg-white text-teal-800 font-semibold rounded-xl hover:bg-teal-50 transition-all duration-300 cursor-pointer shadow-md hover:shadow-lg hover:-translate-y-0.5"
                 >
                   Get Started Free
+                  <span className="inline-block ml-2 transition-transform duration-300 group-hover:translate-x-1">
+                    &rarr;
+                  </span>
                 </Link>
                 <Link
                   to="/login"
-                  className="px-6 py-3 border border-white/30 text-white font-semibold rounded-lg hover:bg-white/10 transition-colors"
+                  className="px-8 py-3.5 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/10 transition-all duration-300 cursor-pointer backdrop-blur-sm"
                 >
                   Sign In
                 </Link>
               </>
             )}
-          </div>
+          </motion.div>
+        </div>
+
+        {/* Bottom fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
+      </section>
+
+      {/* ── Features ────────────────────────────────────────────────── */}
+      <section className="relative py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-8">
+          <AnimatedSection className="text-center">
+            <motion.p
+              variants={fadeUp}
+              custom={0}
+              className="text-sm font-semibold text-primary uppercase tracking-wider"
+            >
+              Features
+            </motion.p>
+            <motion.h2
+              variants={fadeUp}
+              custom={1}
+              className="mt-3 text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight"
+            >
+              Everything you need
+            </motion.h2>
+            <motion.p
+              variants={fadeUp}
+              custom={2}
+              className="mt-4 text-stone-500 max-w-lg mx-auto"
+            >
+              Powerful features to manage your deployment pipeline end-to-end.
+            </motion.p>
+          </AnimatedSection>
+
+          <AnimatedSection className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                variants={fadeUp}
+                custom={i}
+                className="group relative p-6 rounded-card border border-border bg-white hover:border-primary-muted hover:shadow-card-hover transition-all duration-300 cursor-default"
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary-light text-primary flex items-center justify-center group-hover:bg-primary-muted transition-colors duration-300">
+                  {f.icon}
+                </div>
+                <h3 className="mt-4 font-semibold text-stone-900">{f.title}</h3>
+                <p className="mt-2 text-sm text-stone-500 leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
+          </AnimatedSection>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-6xl mx-auto px-8 py-20">
-        <h2 className="text-2xl font-bold text-center text-gray-900">Everything you need</h2>
-        <p className="mt-2 text-center text-gray-500">Powerful features to manage your deployment pipeline</p>
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((f) => (
-            <div key={f.title} className="text-center">
-              <div className="mx-auto w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                {f.icon}
-              </div>
-              <h3 className="mt-4 font-semibold text-gray-900">{f.title}</h3>
-              <p className="mt-2 text-sm text-gray-500">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="bg-gray-50 py-20">
+      {/* ── How It Works ────────────────────────────────────────────── */}
+      <section className="py-24 bg-stone-50">
         <div className="max-w-4xl mx-auto px-8">
-          <h2 className="text-2xl font-bold text-center text-gray-900">How it works</h2>
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-8">
+          <AnimatedSection className="text-center">
+            <motion.p
+              variants={fadeUp}
+              custom={0}
+              className="text-sm font-semibold text-primary uppercase tracking-wider"
+            >
+              How it works
+            </motion.p>
+            <motion.h2
+              variants={fadeUp}
+              custom={1}
+              className="mt-3 text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight"
+            >
+              Three simple steps
+            </motion.h2>
+          </AnimatedSection>
+
+          <AnimatedSection className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 relative">
+            {/* connector line (desktop) */}
+            <div className="hidden sm:block absolute top-8 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px bg-gradient-to-r from-teal-200 via-teal-300 to-teal-200" />
+
             {steps.map((s, i) => (
-              <div key={s.title} className="text-center">
-                <div className="mx-auto w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+              <motion.div
+                key={s.title}
+                variants={fadeUp}
+                custom={i}
+                className="relative text-center"
+              >
+                <div
+                  className="relative z-10 mx-auto w-14 h-14 rounded-2xl bg-teal-700 text-white flex items-center justify-center text-lg font-bold shadow-md"
+                >
                   {i + 1}
                 </div>
-                <h3 className="mt-4 font-semibold text-gray-900">{s.title}</h3>
-                <p className="mt-2 text-sm text-gray-500">{s.desc}</p>
-              </div>
+                <h3 className="mt-5 font-semibold text-stone-900">{s.title}</h3>
+                <p className="mt-2 text-sm text-stone-500 leading-relaxed">{s.desc}</p>
+              </motion.div>
             ))}
-          </div>
+          </AnimatedSection>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 text-center text-sm text-gray-400">
-        &copy; {new Date().getFullYear()} DeployFlow. All rights reserved.
+      {/* ── CTA Banner ──────────────────────────────────────────────── */}
+      <section className="py-24 bg-white">
+        <AnimatedSection className="max-w-4xl mx-auto px-8 text-center">
+          <motion.h2
+            variants={fadeUp}
+            custom={0}
+            className="text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight"
+          >
+            Ready to streamline your deployments?
+          </motion.h2>
+          <motion.p
+            variants={fadeUp}
+            custom={1}
+            className="mt-4 text-stone-500 max-w-lg mx-auto"
+          >
+            Stop juggling spreadsheets. Start orchestrating with confidence.
+          </motion.p>
+          <motion.div
+            variants={fadeUp}
+            custom={2}
+            className="mt-8"
+          >
+            <Link
+              to={isLoggedIn ? '/dashboard' : '/signup'}
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-hover transition-all duration-300 cursor-pointer shadow-md hover:shadow-lg hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              {isLoggedIn ? 'Go to Dashboard' : 'Get Started Free'}
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </motion.div>
+        </AnimatedSection>
+      </section>
+
+      {/* ── Footer ──────────────────────────────────────────────────── */}
+      <footer className="py-8 text-center text-sm text-text-muted border-t border-border">
+        &copy; {new Date().getFullYear()} Tilli-go. All rights reserved.
       </footer>
     </div>
   );

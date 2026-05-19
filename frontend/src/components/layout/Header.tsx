@@ -23,35 +23,41 @@ interface HeaderProps {
 
 export default function Header({ onToggleMobile }: HeaderProps) {
   const location = useLocation();
-  const title = pageTitles[location.pathname] || 'DeployFlow';
+  const title = pageTitles[location.pathname] || 'Tilli-go';
   const { projects, selectedProjectId, setSelectedProjectId, projectsLoading } =
     useContext(ProjectContext);
 
   const user = React.useMemo(() => {
     try {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const parsed = JSON.parse(raw) as { email?: string; name?: string; profilePicture?: string | null };
+        return parsed;
+      }
       const token = localStorage.getItem('token');
       if (!token) return null;
       const parts = token.split('.');
       if (!parts[1]) return null;
-      const payload = JSON.parse(atob(parts[1])) as { email?: string };
-      return { email: payload.email };
+      const payload = JSON.parse(atob(parts[1])) as { email?: string; name?: string };
+      return { email: payload.email, name: payload.name };
     } catch {
       return null;
     }
   }, []);
 
   return (
-    <header className="h-14 border-b bg-white flex items-center justify-between px-4 md:px-6">
+    <header
+      className="h-14 border-b border-border bg-surface flex items-center justify-between px-4 md:px-6"
+    >
       <div className="flex items-center gap-3">
-        {/* Mobile menu button */}
         <button
           onClick={onToggleMobile}
-          className="md:hidden p-1.5 rounded hover:bg-gray-100 transition-colors"
+          className="md:hidden p-1.5 rounded hover:bg-surface-hover transition-colors min-h-touch min-w-touch flex items-center justify-center cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           aria-label="Toggle menu"
         >
           <MenuIcon />
         </button>
-        <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
+        <h1 className="text-lg font-semibold text-text-primary">{title}</h1>
       </div>
       <div className="flex items-center gap-4">
         <select
@@ -59,7 +65,7 @@ export default function Header({ onToggleMobile }: HeaderProps) {
           onChange={(e) => setSelectedProjectId(e.target.value || null)}
           disabled={projectsLoading}
           aria-label="Select project"
-          className="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          className="text-sm border border-border-strong rounded-md px-2 py-1.5 min-h-[44px] bg-surface cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
         >
           {projectsLoading ? (
             <option value="" disabled>Loading projects...</option>
@@ -75,8 +81,15 @@ export default function Header({ onToggleMobile }: HeaderProps) {
           )}
         </select>
         {user && (
-          <Link to="/profile" className="hidden sm:block text-sm text-gray-500 hover:text-gray-700 transition-colors">
-            {user.email}
+          <Link to="/profile" className="hidden sm:flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors">
+            {user.profilePicture ? (
+              <img src={user.profilePicture} alt="" className="w-7 h-7 rounded-full object-cover" />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                {(user.name || user.email || '?').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <span>{user.email}</span>
           </Link>
         )}
       </div>

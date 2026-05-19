@@ -9,15 +9,22 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("user")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  tasks     Task[]   @relation("AssignedUser")
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  password            String?
+  name                String
+  role                String    @default("user")
+  oauthProvider       String?   @map("oauth_provider")
+  oauthId             String?   @map("oauth_id")
+  oauthAccessToken    String?   @map("oauth_access_token") @db.Text
+  oauthRefreshToken   String?   @map("oauth_refresh_token") @db.Text
+  oauthTokenExpiresAt DateTime? @map("oauth_token_expires_at")
+  profilePicture      String?   @map("profile_picture") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  tasks               Task[]    @relation("AssignedUser")
 
+  @@unique([oauthProvider, oauthId])
   @@map("users")
 }
 

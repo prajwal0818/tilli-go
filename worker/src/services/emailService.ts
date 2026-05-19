@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import config from '../config';
 import logger from '../config/logger';
+import { sendEmailViaGraph } from './graphEmailService';
 
 // ── Transport ────────────────────────────────────────────────────────────────
 // Real SMTP when credentials are configured, otherwise jsonTransport mock.
@@ -74,9 +75,15 @@ export async function sendEmail(task: TaskForEmail): Promise<EmailResult> {
   const to =
     task.assignedUser?.email ||
     `${task.assignedTeam || config.email.fallbackTeam}@${config.email.domain}`;
-  const subject = `[DeployFlow] Task triggered: ${task.taskName}`;
+  const subject = `[Tilli-go] Task triggered: ${task.taskName}`;
   const ackUrl = buildAckUrl(task.id);
   const html = buildTaskEmailHtml(task, ackUrl);
+
+  // Use Microsoft Graph API if enabled, otherwise SMTP / mock
+  if (config.microsoft.mailEnabled) {
+    const messageId = await sendEmailViaGraph(to, subject, html);
+    return { messageId };
+  }
 
   const fromAddress = config.email.fromAddress || `noreply@${config.email.domain}`;
   const info = await transporter.sendMail({

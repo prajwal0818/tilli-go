@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 interface NavItem {
   to: string;
@@ -43,18 +44,7 @@ function TasksIcon() {
   );
 }
 
-function ChevronIcon({ collapsed }: { collapsed: boolean }) {
-  return (
-    <svg
-      className={`w-5 h-5 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-    </svg>
-  );
-}
+const EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
 const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
@@ -80,27 +70,40 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onToggleCollapse, o
   };
 
   return (
-    <aside
+    <motion.aside
       className={`
-        border-r bg-gray-900 text-white flex flex-col
-        transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'w-16' : 'w-56'}
+        border-r border-stone-700 bg-stone-900 text-white flex flex-col
         md:relative md:translate-x-0
         fixed inset-y-0 left-0 z-30
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
+      animate={{ width: isCollapsed ? 64 : 224 }}
+      transition={{ duration: 0.3, ease: EASE }}
     >
       {/* Brand + Desktop Toggle */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-gray-700">
-        <span className={`text-lg font-bold tracking-tight transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}`}>
-          DeployFlow
-        </span>
+      <div className="h-14 flex items-center justify-between px-4 border-b border-stone-700">
+        <motion.span
+          className="text-lg font-bold tracking-tight overflow-hidden whitespace-nowrap"
+          animate={{ opacity: isCollapsed ? 0 : 1, width: isCollapsed ? 0 : 'auto' }}
+          transition={{ duration: 0.2, ease: EASE }}
+        >
+          Tilli-go
+        </motion.span>
         <button
           onClick={onToggleCollapse}
-          className="hidden md:flex items-center justify-center p-1.5 rounded hover:bg-gray-800 transition-colors"
+          className="hidden md:flex items-center justify-center p-1.5 rounded hover:bg-stone-800 transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          <ChevronIcon collapsed={isCollapsed} />
+          <motion.svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            animate={{ rotate: isCollapsed ? 180 : 0 }}
+            transition={{ duration: 0.3, ease: EASE }}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </motion.svg>
         </button>
       </div>
 
@@ -113,40 +116,53 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onToggleCollapse, o
             end={item.to === '/dashboard'}
             onClick={onCloseMobile}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 ${
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-primary text-white'
+                  : 'text-stone-300 hover:bg-stone-800 hover:text-white'
               } ${isCollapsed ? 'justify-center' : ''}`
             }
             title={isCollapsed ? item.label : undefined}
           >
-            <item.icon aria-hidden="true" />
-            <span className={`transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'}`}>
-              {item.label}
-            </span>
+            {({ isActive }) => (
+              <>
+                <item.icon aria-hidden="true" />
+                <motion.span
+                  className="overflow-hidden whitespace-nowrap"
+                  animate={{ opacity: isCollapsed ? 0 : 1, width: isCollapsed ? 0 : 'auto' }}
+                  transition={{ duration: 0.2, ease: EASE }}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {item.label}
+                </motion.span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
       {/* Logout */}
-      <div className="p-3 border-t border-gray-700">
+      <div className="p-3 border-t border-stone-700">
         <button
           onClick={handleLogout}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors ${
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-stone-300 hover:bg-stone-800 hover:text-white transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900 ${
             isCollapsed ? 'justify-center' : ''
           }`}
-          title={isCollapsed ? 'Logout' : undefined}
+          aria-label="Logout"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span className={`transition-opacity duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100'}`}>
+          <motion.span
+            className="overflow-hidden whitespace-nowrap"
+            animate={{ opacity: isCollapsed ? 0 : 1, width: isCollapsed ? 0 : 'auto' }}
+            transition={{ duration: 0.2, ease: EASE }}
+          >
             Logout
-          </span>
+          </motion.span>
         </button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

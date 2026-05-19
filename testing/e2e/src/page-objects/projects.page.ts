@@ -12,10 +12,12 @@ export class ProjectsPage {
   readonly projectList: Locator;
   readonly errorMessage: Locator;
   readonly emptyMessage: Locator;
+  readonly selectAllCheckbox: Locator;
+  readonly deleteSelectedButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { name: 'Projects' });
+    this.heading = page.getByRole('heading', { name: 'Projects', level: 2 });
     this.newProjectButton = page.getByRole('button', { name: /new project/i });
     this.projectNameInput = page.getByLabel('Project Name');
     this.codeInput = page.getByLabel('Code');
@@ -23,12 +25,15 @@ export class ProjectsPage {
     this.createButton = page.getByRole('button', { name: /create project/i });
     this.cancelButton = page.getByRole('button', { name: /cancel/i });
     this.projectList = page.locator('.divide-y');
-    this.errorMessage = page.locator('.text-red-600');
+    this.errorMessage = page.locator('.text-destructive');
     this.emptyMessage = page.getByText('No projects yet');
+    this.selectAllCheckbox = page.getByLabel('Select all projects');
+    this.deleteSelectedButton = page.getByRole('button', { name: /delete \(\d+\)/i });
   }
 
   async goto() {
     await this.page.goto('/#/projects');
+    await this.page.reload();
   }
 
   async createProject(name: string, code: string, description?: string) {
@@ -43,6 +48,10 @@ export class ProjectsPage {
 
   getProjectRow(code: string): Locator {
     return this.projectList.locator('div').filter({ hasText: code }).first();
+  }
+
+  getProjectCheckbox(code: string): Locator {
+    return this.getProjectRow(code).getByRole('checkbox');
   }
 
   getDeleteButton(code: string): Locator {

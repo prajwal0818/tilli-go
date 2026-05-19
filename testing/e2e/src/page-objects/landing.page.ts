@@ -16,7 +16,7 @@ export class LandingPage {
     this.getStartedButton = page.getByRole('link', { name: /get started/i });
     this.signInLink = page.getByRole('link', { name: /sign in/i }).first();
     this.goToDashboardButton = page.getByRole('link', { name: /go to dashboard/i }).first();
-    this.deployFlowBrand = page.locator('nav').getByText('DeployFlow');
+    this.deployFlowBrand = page.locator('nav').getByText(/DeployFlow|Tilli/i).first();
     this.featuresSection = page.getByText('Everything you need');
     this.howItWorksSection = page.getByText('How it works');
   }

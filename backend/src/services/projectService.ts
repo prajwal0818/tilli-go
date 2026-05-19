@@ -45,3 +45,9 @@ export async function remove(id: string): Promise<void> {
   await prisma.project.delete({ where: { id } });
   logger.info({ projectId: id, projectCode: existing.code }, 'Project deleted');
 }
+
+export async function removeMany(ids: string[]): Promise<number> {
+  const result = await prisma.project.deleteMany({ where: { id: { in: ids } } });
+  logger.info({ count: result.count, ids }, 'Projects batch deleted');
+  return result.count;
+}

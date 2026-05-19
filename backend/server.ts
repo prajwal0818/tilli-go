@@ -8,7 +8,7 @@ import * as queueService from './src/services/queueService';
 const PORT = config.apiPort;
 
 const server = app.listen(PORT, () => {
-  logger.info(`DeployFlow API running on port ${PORT}`);
+  logger.info(`Tilli-go API running on port ${PORT}`);
   scheduler.start();
 });
 

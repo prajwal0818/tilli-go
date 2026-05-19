@@ -25,6 +25,23 @@ if (isProduction) {
   }
 }
 
+const microsoftClientId = process.env.MICROSOFT_CLIENT_ID || '';
+const microsoftClientSecret = process.env.MICROSOFT_CLIENT_SECRET || '';
+const microsoftEnabled = !!(
+  microsoftClientId &&
+  microsoftClientSecret &&
+  microsoftClientId !== 'your-client-id-here'
+);
+
+if (isProduction && microsoftEnabled) {
+  const tokenEncKey = process.env.TOKEN_ENCRYPTION_KEY;
+  if (!tokenEncKey || tokenEncKey.length < 32) {
+    throw new Error(
+      'FATAL: TOKEN_ENCRYPTION_KEY must be at least 32 characters when Microsoft OAuth is enabled.',
+    );
+  }
+}
+
 const config: Config = {
   apiPort: process.env.API_PORT || 3001,
   jwtSecret,
@@ -40,6 +57,16 @@ const config: Config = {
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   ackTokenSecret,
+  microsoft: {
+    clientId: microsoftClientId,
+    clientSecret: microsoftClientSecret,
+    tenantId: process.env.MICROSOFT_TENANT_ID || 'common',
+    redirectUri:
+      process.env.MICROSOFT_REDIRECT_URI ||
+      'http://localhost:3001/api/auth/microsoft/callback',
+    enabled: microsoftEnabled,
+  },
+  tokenEncryptionKey: process.env.TOKEN_ENCRYPTION_KEY,
 };
 
 export = config;

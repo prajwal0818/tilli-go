@@ -5,7 +5,7 @@ import { taskWorker } from './src/queues/taskQueue';
 import { emailWorker } from './src/queues/emailQueue';
 import * as emailProducer from './src/services/emailProducer';
 
-logger.info('DeployFlow worker started');
+logger.info('Tilli-go worker started');
 logger.info(
   { queues: ['task-queue', 'email-queue'] },
   'Listening for jobs'

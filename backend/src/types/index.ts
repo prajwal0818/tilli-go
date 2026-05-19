@@ -63,4 +63,4 @@ export type {
 } from './queue';
 
 // ── Config ──────────────────────────────────────────────────────────────────
-export type { Config, RedisConfig, SmtpConfig } from './config';
+export type { Config, RedisConfig, SmtpConfig, MicrosoftOAuthConfig } from './config';

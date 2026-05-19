@@ -25,7 +25,7 @@ export class SidebarComponent {
 
   /** Get the active (highlighted) navigation link. */
   getActiveLink(): Locator {
-    return this.sidebar.locator('a.bg-blue-600');
+    return this.sidebar.locator('a.bg-primary');
   }
 
   async navigateTo(target: 'Dashboard' | 'Projects' | 'Tasks' | 'Profile') {

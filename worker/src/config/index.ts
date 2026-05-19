@@ -14,6 +14,13 @@ interface WorkerConfig {
     fromName: string;
     fallbackTeam: string;
   };
+  microsoft: {
+    mailEnabled: boolean;
+    clientId: string;
+    clientSecret: string;
+    tenantId: string;
+    mailFrom: string;
+  };
   frontendUrl: string;
   ackTokenSecret: string;
   ackTokenExpiryMs: number;
@@ -51,8 +58,15 @@ const config: WorkerConfig = {
   email: {
     domain: process.env.EMAIL_DOMAIN || 'tilli.pro',
     fromAddress: process.env.EMAIL_FROM_ADDRESS || null,
-    fromName: process.env.EMAIL_FROM_NAME || 'DeployFlow',
+    fromName: process.env.EMAIL_FROM_NAME || 'Tilli-go',
     fallbackTeam: process.env.EMAIL_FALLBACK_TEAM || 'ops',
+  },
+  microsoft: {
+    mailEnabled: process.env.MICROSOFT_MAIL_ENABLED === 'true',
+    clientId: process.env.MICROSOFT_CLIENT_ID || '',
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET || '',
+    tenantId: process.env.MICROSOFT_TENANT_ID || '',
+    mailFrom: process.env.MICROSOFT_MAIL_FROM || '',
   },
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   ackTokenSecret,

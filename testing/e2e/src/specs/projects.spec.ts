@@ -63,24 +63,32 @@ test.describe('Projects', () => {
     await projects.createProject(name, code);
     await expect(projects.createButton).not.toBeVisible({ timeout: 10_000 });
 
-    // The header dropdown should contain the project
-    const selectedText = await header.getSelectedProjectText();
-    expect(selectedText).toContain(code);
+    // Wait for the header dropdown to update with the newly selected project
+    await expect.poll(
+      async () => header.getSelectedProjectText(),
+      { timeout: 5_000 },
+    ).toContain(code);
   });
 
-  test('delete project with confirmation', async ({ authenticatedPage, apiHelper }) => {
+  test('delete project via multi-select with confirmation', async ({ authenticatedPage, apiHelper }) => {
     // Create a project via API for clean isolation
     const code = uniqueProjectCode();
-    const project = await apiHelper.createProject('Delete Me', code);
+    await apiHelper.createProject('Delete Me', code);
 
     await projects.goto();
     await expect(projects.heading).toBeVisible();
 
+    // Select the project checkbox
+    const checkbox = projects.getProjectCheckbox(code);
+    await checkbox.click();
+
+    // Delete Selected button should appear
+    await expect(projects.deleteSelectedButton).toBeVisible();
+
     // Set up dialog handler to accept confirmation
     authenticatedPage.on('dialog', (dialog) => dialog.accept());
 
-    const deleteButton = projects.getDeleteButton(code);
-    await deleteButton.click();
+    await projects.deleteSelectedButton.click();
 
     // Wait for the project to be removed from the list
     await expect(projects.getProjectRow(code)).not.toBeVisible({ timeout: 10_000 });

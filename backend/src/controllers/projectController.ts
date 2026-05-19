@@ -41,3 +41,17 @@ export const remove = async (req: Request, res: Response, next: NextFunction): P
     next(err);
   }
 };
+
+export const removeMany = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0 || !ids.every((id: unknown) => typeof id === 'string')) {
+      res.status(400).json({ error: 'ids must be a non-empty array of strings' });
+      return;
+    }
+    const deleted = await projectService.removeMany(ids);
+    res.json({ deleted });
+  } catch (err) {
+    next(err);
+  }
+};

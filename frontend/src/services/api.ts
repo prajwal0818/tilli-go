@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+const configuredUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+
+/** Base URL without /api suffix, for full-page redirects (e.g. OAuth) */
+export const API_BASE_URL = configuredUrl.replace(/\/api\/?$/, '');
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
+  baseURL: configuredUrl,
 });
 
 api.interceptors.request.use((config) => {

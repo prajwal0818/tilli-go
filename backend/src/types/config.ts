@@ -10,6 +10,14 @@ export interface SmtpConfig {
   pass: string | undefined;
 }
 
+export interface MicrosoftOAuthConfig {
+  clientId: string;
+  clientSecret: string;
+  tenantId: string;
+  redirectUri: string;
+  enabled: boolean;
+}
+
 export interface Config {
   apiPort: number | string;
   jwtSecret: string | undefined;
@@ -17,4 +25,6 @@ export interface Config {
   smtp: SmtpConfig;
   frontendUrl: string;
   ackTokenSecret: string;
+  microsoft: MicrosoftOAuthConfig;
+  tokenEncryptionKey: string | undefined;
 }

@@ -12,6 +12,11 @@ test.describe('Dashboard', () => {
       localStorage.removeItem('selectedProjectId');
     });
 
+    // Intercept the projects API to return an empty list so auto-select doesn't kick in
+    await authenticatedPage.route('**/api/projects*', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], total: 0, page: 1, limit: 100 }) }),
+    );
+
     dashboard = new DashboardPage(authenticatedPage);
     await dashboard.goto();
 

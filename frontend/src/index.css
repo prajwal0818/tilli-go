@@ -2,20 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Three-layer system: Primitive → Semantic → Component
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Layer 1: Primitives (raw HSL values, no wrapper) ──────────────── */
+  --color-teal-50:  166 76% 97%;
+  --color-teal-100: 167 85% 89%;
+  --color-teal-200: 168 84% 78%;
+  --color-teal-500: 170 75% 41%;
+  --color-teal-600: 171 77% 36%;
+  --color-teal-700: 173 80% 26%;
+  --color-teal-800: 175 84% 22%;
+  --color-teal-900: 176 69% 15%;
+
+  --color-amber-50:  48 100% 96%;
+  --color-amber-100: 48 96% 89%;
+  --color-amber-500: 38 92% 50%;
+  --color-amber-600: 32 95% 44%;
+
+  --color-red-50:  0 86% 97%;
+  --color-red-100: 0 93% 94%;
+  --color-red-500: 0 84% 60%;
+  --color-red-600: 0 72% 51%;
+
+  --color-stone-50:  60 9% 98%;
+  --color-stone-100: 60 5% 96%;
+  --color-stone-200: 20 6% 90%;
+  --color-stone-300: 24 6% 83%;
+  --color-stone-400: 24 5% 64%;
+  --color-stone-500: 25 5% 45%;
+  --color-stone-600: 33 5% 32%;
+  --color-stone-700: 30 6% 25%;
+  --color-stone-800: 12 6% 15%;
+  --color-stone-900: 24 10% 10%;
+
+  --color-white: 0 0% 100%;
+
+  /* ── Layer 2: Semantic tokens ─────────────────────────────────────── */
+  --color-primary:       var(--color-teal-700);
+  --color-primary-hover: var(--color-teal-800);
+  --color-primary-light: var(--color-teal-50);
+  --color-primary-muted: var(--color-teal-100);
+
+  --color-accent:       var(--color-amber-600);
+  --color-accent-light: var(--color-amber-50);
+
+  --color-destructive:       var(--color-red-600);
+  --color-destructive-light: var(--color-red-50);
+
+  --color-warning:       var(--color-amber-500);
+  --color-warning-light: var(--color-amber-50);
+
+  --color-surface:       var(--color-white);
+  --color-surface-alt:   var(--color-stone-50);
+  --color-surface-hover: var(--color-stone-100);
+
+  --color-border:        var(--color-stone-200);
+  --color-border-strong: var(--color-stone-300);
+
+  --color-text-primary:   var(--color-stone-900);
+  --color-text-secondary: var(--color-stone-500);
+  --color-text-muted:     var(--color-stone-400);
+
+  /* ── Typography ───────────────────────────────────────────────────── */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* ── Focus ring ───────────────────────────────────────────────────── */
+  --ring-width: 2px;
+  --ring-offset: 2px;
+  --ring-color: hsl(var(--color-teal-500) / 0.5);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Global base styles ──────────────────────────────────────────────── */
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Global focus-visible ring ───────────────────────────────────────── */
+*:focus-visible {
+  outline: var(--ring-width) solid var(--ring-color);
+  outline-offset: var(--ring-offset);
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AG GRID THEME
+   ══════════════════════════════════════════════════════════════════════════ */
+
 /* Ensure AG Grid fills its container */
 .ag-theme-alpine {
-  --ag-font-family: inherit;
+  --ag-font-family: var(--font-sans);
 
   /* Row highlight: left border accents */
   --row-border-pending:      #9ca3af;
-  --row-border-triggered:    #3b82f6;
+  --row-border-triggered:    #0F766E;
   --row-border-acknowledged: #f59e0b;
   --row-border-completed:    #22c55e;
   --row-border-blocked:      #ef4444;
 
   /* Row highlight: background tints (4-5% opacity) */
   --row-bg-pending:          rgba(156, 163, 175, 0.04);
-  --row-bg-triggered:        rgba(59, 130, 246, 0.04);
+  --row-bg-triggered:        rgba(15, 118, 110, 0.04);
   --row-bg-acknowledged:     rgba(245, 158, 11, 0.04);
   --row-bg-completed:        rgba(34, 197, 94, 0.04);
   --row-bg-blocked:          rgba(239, 68, 68, 0.05);
@@ -23,7 +129,7 @@
 
 /* AG Grid row selection highlight */
 .ag-theme-alpine .ag-row-selected {
-  background-color: #eff6ff !important;
+  background-color: #f0fdfa !important;
 }
 
 /* ── Status row highlights (SAP UI5 semantic rows) ──────────────────── */
@@ -74,7 +180,7 @@
 }
 
 .ag-cell:hover .datetime-cell-editable {
-  background-color: #f9fafb;
+  background-color: #fafaf9;
   border-radius: 3px;
 }
 
@@ -84,10 +190,26 @@
 }
 
 .ag-cell:hover .status-cell-editable {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.3);
 }
 
-/* Toast slide-in animation */
+/* Editable cell affordances (generic — text/select columns) */
+.ag-theme-alpine .ag-cell-editable {
+  cursor: pointer;
+}
+
+.ag-theme-alpine .ag-row:not(.row-status-completed) .ag-cell-editable:hover {
+  background-color: hsl(var(--color-stone-50));
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px hsl(var(--color-stone-200));
+  transition: background-color 150ms, box-shadow 150ms;
+}
+
+.ag-theme-alpine .ag-row.row-status-completed .ag-cell-editable {
+  cursor: default;
+}
+
+/* Toast slide-in animation (CSS fallback) */
 @keyframes slide-in {
   from {
     transform: translateX(100%);

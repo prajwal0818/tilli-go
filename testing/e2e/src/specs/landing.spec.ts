@@ -11,7 +11,7 @@ test.describe('Landing Page', () => {
 
   test('displays hero section with heading', async () => {
     await expect(landing.heroHeading).toBeVisible();
-    await expect(landing.heroHeading).toContainText('Deployment Orchestration');
+    await expect(landing.heroHeading).toContainText('Deploy with confidence');
   });
 
   test('displays brand name', async () => {
@@ -39,9 +39,13 @@ test.describe('Landing Page', () => {
   });
 
   test('shows Go to Dashboard when logged in', async ({ page }) => {
+    // Intercept all API calls to prevent 401 redirect when using a fake token
+    await page.route('**/api/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], total: 0 }) }),
+    );
+
     // Inject a token to simulate logged-in state
     await page.evaluate(() => {
-      // Create a minimal valid-looking JWT (won't actually work for API calls)
       const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
       const payload = btoa(
         JSON.stringify({ sub: 'test', email: 'test@test.com', exp: Math.floor(Date.now() / 1000) + 3600 }),

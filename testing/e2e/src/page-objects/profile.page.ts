@@ -11,16 +11,17 @@ export class ProfilePage {
 
   constructor(page: Page) {
     this.page = page;
-    this.avatar = page.locator('.rounded-full.bg-blue-600');
+    this.avatar = page.locator('.w-16.h-16.rounded-full.bg-primary');
     this.userName = page.locator('h2.text-xl');
     this.userEmail = page.locator('h2.text-xl + p');
-    this.infoCard = page.locator('.shadow.divide-y');
+    this.infoCard = page.locator('.shadow-card.divide-y');
     this.comingSoonBadge = page.getByText('Coming Soon');
     this.noUserMessage = page.getByText('No user information available.');
   }
 
   async goto() {
     await this.page.goto('/#/profile');
+    await this.page.reload();
   }
 
   getInfoRow(label: string): Locator {

@@ -24,8 +24,8 @@ test.describe('Acknowledge Page', () => {
     await expect(ack.errorHeading).toBeVisible({ timeout: 10_000 });
   });
 
-  test('shows DeployFlow title', async () => {
+  test('shows Tilli-go title', async () => {
     await ack.gotoWithoutParams();
-    await expect(ack.title).toContainText('DeployFlow');
+    await expect(ack.title).toContainText('Tilli-go');
   });
 });

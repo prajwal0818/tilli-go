@@ -20,7 +20,7 @@ export class SignUpPage {
     this.confirmPasswordInput = page.getByLabel('Confirm Password');
     this.signUpButton = page.getByRole('button', { name: /sign up/i });
     this.signInLink = page.getByRole('link', { name: /sign in/i });
-    this.errorMessage = page.locator('.text-red-600');
+    this.errorMessage = page.locator('.text-destructive');
   }
 
   async goto() {

@@ -11,6 +11,7 @@ router.use(auth);
 router.get('/', projectController.list);
 router.get('/:id', projectController.getById);
 router.post('/', validate(createProjectSchema), projectController.create);
+router.post('/batch-delete', projectController.removeMany);
 router.delete('/:id', projectController.remove);
 
 export = router;

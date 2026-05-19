@@ -53,6 +53,8 @@ export interface UserSummary {
   name: string;
   email: string;
   role: string;
+  profilePicture?: string | null;
+  oauthProvider?: string | null;
 }
 
 // ── API payloads ─────────────────────────────────────────────────────────────

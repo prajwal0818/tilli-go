@@ -17,6 +17,8 @@ export interface UserSummary {
   email: string;
   name: string;
   role: string;
+  profilePicture?: string | null;
+  oauthProvider?: string | null;
 }
 
 /** JWT payload embedded in the token (what jwt.sign receives) */
@@ -24,6 +26,7 @@ export interface JwtTokenPayload {
   sub: string;
   email: string;
   role: string;
+  name?: string;
 }
 
 /**

@@ -10,6 +10,11 @@ test.describe('Task Grid', () => {
       localStorage.removeItem('selectedProjectId');
     });
 
+    // Intercept the projects API to return an empty list so auto-select doesn't kick in
+    await authenticatedPage.route('**/api/projects*', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], total: 0, page: 1, limit: 100 }) }),
+    );
+
     grid = new TaskGridPage(authenticatedPage);
     await grid.goto();
 
@@ -85,9 +90,9 @@ test.describe('Task Grid', () => {
     await grid.goto();
     await grid.waitForGrid();
 
-    // Select the row by clicking its checkbox
-    const checkbox = grid.getRowCheckbox(0);
-    await checkbox.click();
+    // Select the row by clicking it (no checkboxSelection configured, use click)
+    const row = grid.getRow(0);
+    await row.click();
 
     // Accept the confirmation dialog
     authenticatedPage.on('dialog', (dialog) => dialog.accept());

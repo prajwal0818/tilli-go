@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ToastType, ToastItem } from '../../types';
 
 const TOAST_DURATION = 5000;
@@ -11,10 +12,10 @@ export function toast(message: string, type: ToastType = 'error'): void {
 }
 
 const typeStyles: Record<ToastType, string> = {
-  error: 'bg-red-600 text-white',
-  success: 'bg-green-600 text-white',
-  info: 'bg-blue-600 text-white',
-  warning: 'bg-yellow-500 text-white',
+  error: 'bg-destructive text-white',
+  success: 'bg-teal-600 text-white',
+  info: 'bg-primary text-white',
+  warning: 'bg-amber-500 text-white',
 };
 
 function ToastItemView({ item, onRemove }: { item: ToastItem; onRemove: (id: number) => void }) {
@@ -24,14 +25,19 @@ function ToastItemView({ item, onRemove }: { item: ToastItem; onRemove: (id: num
   }, [item.id, onRemove]);
 
   return (
-    <div
-      className={`px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-sm animate-slide-in ${
+    <motion.div
+      initial={{ opacity: 0, x: 60, scale: 0.95 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 60, scale: 0.95 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+      className={`px-4 py-3 rounded-card shadow-card-lg text-sm font-medium max-w-sm ${
         typeStyles[item.type] || typeStyles.error
       }`}
       role="alert"
+      aria-live="polite"
     >
       {item.message}
-    </div>
+    </motion.div>
   );
 }
 
@@ -57,9 +63,11 @@ export default function ToastContainer() {
 
   return (
     <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
-      {toasts.map((t) => (
-        <ToastItemView key={t.id} item={t} onRemove={removeToast} />
-      ))}
+      <AnimatePresence>
+        {toasts.map((t) => (
+          <ToastItemView key={t.id} item={t} onRemove={removeToast} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

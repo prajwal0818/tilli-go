@@ -1,5 +1,6 @@
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import routes from './routes';
 import errorHandler from './middleware/errorHandler';
 
@@ -12,6 +13,7 @@ app.use(
   })
 );
 app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
 
 // Health check for Docker / load balancer
 app.get('/health', (_req: Request, res: Response) => {

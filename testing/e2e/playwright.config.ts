@@ -7,6 +7,7 @@ const testEnv = process.env.TEST_ENV || 'local';
 dotenv.config({ path: path.resolve(__dirname, `.env.${testEnv}`) });
 
 export default defineConfig({
+  globalSetup: './src/global-setup.ts',
   testDir: './src/specs',
   fullyParallel: false,
   workers: 1,

@@ -3,6 +3,7 @@ import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import type { ColDef, CellValueChangedEvent, GetRowIdParams, RowClassParams } from 'ag-grid-community';
+
 import { columnDefs } from './columnDefs';
 import { useTaskData } from '../../hooks/useTaskData';
 import { ProjectContext } from '../../App';
@@ -20,7 +21,6 @@ export default function TaskGrid() {
   const pendingUpdates = useRef<Record<string, UpdateTaskInput>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  // Clean up debounce timers on unmount
   useEffect(() => {
     return () => {
       Object.values(timers.current).forEach(clearTimeout);
@@ -37,7 +37,6 @@ export default function TaskGrid() {
         await updateTask(rowId, payload);
       } catch (err: unknown) {
         toast(`Update failed: ${getErrorMessage(err)}`);
-        // Refetch to reset grid state after failed update
         fetchTasks();
       }
     },
@@ -51,17 +50,14 @@ export default function TaskGrid() {
       const rowId = data.id;
       const field = colDef.field as keyof UpdateTaskInput | undefined;
 
-      // Skip if no actual change (e.g. ESC or same value)
       if (event.oldValue === event.newValue) return;
       if (!field) return;
 
-      // Accumulate changes for this row
       if (!pendingUpdates.current[rowId]) {
         pendingUpdates.current[rowId] = {};
       }
       (pendingUpdates.current[rowId] as Record<string, unknown>)[field] = newValue;
 
-      // Debounce per row (400ms)
       clearTimeout(timers.current[rowId]);
       timers.current[rowId] = setTimeout(() => flushUpdate(rowId), 400);
     },
@@ -80,7 +76,6 @@ export default function TaskGrid() {
         taskName: 'New Task',
         projectId: selectedProjectId,
       });
-      // Scroll to new row and start editing
       setTimeout(() => {
         const api = gridRef.current?.api;
         if (!api) return;
@@ -143,7 +138,7 @@ export default function TaskGrid() {
 
   if (!selectedProjectId) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center h-full text-text-secondary">
         Select a project to view tasks.
       </div>
     );
@@ -151,7 +146,7 @@ export default function TaskGrid() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center h-full text-text-secondary">
         Loading tasks...
       </div>
     );
@@ -160,10 +155,10 @@ export default function TaskGrid() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
-        <p className="text-red-600">Error: {error}</p>
+        <p className="text-destructive">Error: {error}</p>
         <button
           onClick={fetchTasks}
-          className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+          className="px-3 py-1.5 bg-primary text-white rounded-md text-sm hover:bg-primary-hover transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           Retry
         </button>
@@ -174,20 +169,20 @@ export default function TaskGrid() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b bg-white">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface">
         <button
           onClick={handleAddTask}
-          className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+          className="px-3 py-1.5 min-h-touch bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-hover transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           + Add Task
         </button>
         <button
           onClick={handleDeleteSelected}
-          className="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700"
+          className="px-3 py-1.5 min-h-touch bg-destructive text-white rounded-md text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
         >
           Delete Selected
         </button>
-        <span className="ml-auto text-xs text-gray-400">
+        <span className="ml-auto text-xs text-text-muted">
           {tasks.length} task{tasks.length !== 1 ? 's' : ''}
         </span>
       </div>

@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../page-objects/login.page';
 import { SignUpPage } from '../page-objects/signup.page';
-import { uniqueEmail, uniqueName, TEST_PASSWORD } from '../helpers/constants';
+import { uniqueEmail, uniqueName, TEST_PASSWORD, API_URL } from '../helpers/constants';
+import { ApiHelper } from '../helpers/api.helper';
+import { SHARED_AUTH_PATH, type SharedAuth } from '../global-setup';
+import * as fs from 'fs';
 
 test.describe('Authentication', () => {
   test('signup navigates to dashboard on success', async ({ page }) => {
@@ -19,19 +22,10 @@ test.describe('Authentication', () => {
   });
 
   test('login navigates to dashboard on success', async ({ page }) => {
-    // First register a user
-    const signup = new SignUpPage(page);
-    await signup.goto();
+    // Register via API to avoid rate limits
     const email = uniqueEmail();
     const name = uniqueName();
-    await signup.signUp(name, email, TEST_PASSWORD);
-    await expect(page).toHaveURL(/#\/dashboard/, { timeout: 10_000 });
-
-    // Clear token and go to login
-    await page.evaluate(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    });
+    await ApiHelper.register(email, TEST_PASSWORD, name, API_URL);
 
     const login = new LoginPage(page);
     await login.goto();
@@ -41,18 +35,9 @@ test.describe('Authentication', () => {
   });
 
   test('login shows error on wrong password', async ({ page }) => {
-    // Register first
-    const signup = new SignUpPage(page);
-    await signup.goto();
+    // Register via API to avoid rate limits
     const email = uniqueEmail();
-    await signup.signUp(uniqueName(), email, TEST_PASSWORD);
-    await expect(page).toHaveURL(/#\/dashboard/, { timeout: 10_000 });
-
-    // Logout and try wrong password
-    await page.evaluate(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    });
+    await ApiHelper.register(email, TEST_PASSWORD, uniqueName(), API_URL);
 
     const login = new LoginPage(page);
     await login.goto();
@@ -85,11 +70,24 @@ test.describe('Authentication', () => {
   });
 
   test('logout clears token and redirects to login', async ({ page }) => {
-    // Register and login first
-    const signup = new SignUpPage(page);
-    await signup.goto();
-    await signup.signUp(uniqueName(), uniqueEmail(), TEST_PASSWORD);
-    await expect(page).toHaveURL(/#\/dashboard/, { timeout: 10_000 });
+    // Use shared auth credentials to avoid registration
+    const raw = fs.readFileSync(SHARED_AUTH_PATH, 'utf-8');
+    const sharedUser: SharedAuth = JSON.parse(raw);
+
+    await page.goto('/#/');
+    await page.evaluate(
+      ({ token, userData }) => {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+      },
+      {
+        token: sharedUser.token,
+        userData: { id: sharedUser.id, email: sharedUser.email, name: sharedUser.name, role: 'USER' },
+      },
+    );
+
+    await page.goto('/#/dashboard');
+    await page.reload();
 
     // Click logout in sidebar
     const logoutButton = page.locator('aside').getByRole('button', { name: /logout/i });
@@ -101,10 +99,25 @@ test.describe('Authentication', () => {
   });
 
   test('token persists on page refresh', async ({ page }) => {
-    const signup = new SignUpPage(page);
-    await signup.goto();
-    await signup.signUp(uniqueName(), uniqueEmail(), TEST_PASSWORD);
-    await expect(page).toHaveURL(/#\/dashboard/, { timeout: 10_000 });
+    // Use shared auth credentials to avoid registration
+    const raw = fs.readFileSync(SHARED_AUTH_PATH, 'utf-8');
+    const sharedUser: SharedAuth = JSON.parse(raw);
+
+    await page.goto('/#/');
+    await page.evaluate(
+      ({ token, userData }) => {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+      },
+      {
+        token: sharedUser.token,
+        userData: { id: sharedUser.id, email: sharedUser.email, name: sharedUser.name, role: 'USER' },
+      },
+    );
+
+    await page.goto('/#/dashboard');
+    await page.reload();
+    await expect(page).toHaveURL(/#\/dashboard/);
 
     const tokenBefore = await page.evaluate(() => localStorage.getItem('token'));
     await page.reload();
