@@ -8,6 +8,8 @@ import type { TaskJobPayload, TaskJobInput, EmailJobPayload } from '../types';
 const redisOpts = {
   host: config.redis.host,
   port: config.redis.port,
+  password: config.redis.password,
+  tls: config.redis.tls ? {} : undefined,
 };
 
 export const taskQueue = new Queue<TaskJobPayload>('task-queue', { connection: redisOpts });

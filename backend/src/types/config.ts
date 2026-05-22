@@ -1,6 +1,8 @@
 export interface RedisConfig {
   host: string;
   port: number;
+  password: string | undefined;
+  tls: boolean;
 }
 
 export interface SmtpConfig {

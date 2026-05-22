@@ -7,6 +7,8 @@ const emailQueue = new Queue<EmailJobPayload>('email-queue', {
   connection: {
     host: config.redis.host,
     port: config.redis.port,
+    password: config.redis.password,
+    tls: config.redis.tls ? {} : undefined,
   },
 });
 
