@@ -11,6 +11,7 @@ export interface UseTaskDataReturn {
   addTask: (data: CreateTaskInput) => Promise<Task>;
   updateTask: (id: string, data: UpdateTaskInput) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
+  patchTaskLocal: (id: string, patch: Partial<Task>) => void;
 }
 
 export function useTaskData(projectId: string | null): UseTaskDataReturn {
@@ -59,5 +60,10 @@ export function useTaskData(projectId: string | null): UseTaskDataReturn {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  return { tasks, loading, error, fetchTasks, addTask, updateTask, deleteTask };
+  /** Optimistically patch a task in local state (no API call). */
+  const patchTaskLocal = useCallback((id: string, patch: Partial<Task>) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }, []);
+
+  return { tasks, loading, error, fetchTasks, addTask, updateTask, deleteTask, patchTaskLocal };
 }

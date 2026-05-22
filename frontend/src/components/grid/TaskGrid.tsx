@@ -14,7 +14,7 @@ import type { Task, UpdateTaskInput } from '../../types';
 export default function TaskGrid() {
   const gridRef = useRef<AgGridReact<Task>>(null);
   const { selectedProjectId } = useContext(ProjectContext);
-  const { tasks, loading, error, addTask, updateTask, deleteTask, fetchTasks } =
+  const { tasks, loading, error, addTask, updateTask, deleteTask, fetchTasks, patchTaskLocal } =
     useTaskData(selectedProjectId);
 
   // ── Per-row debounced updates ──────────────────────────────────────────────
@@ -53,6 +53,9 @@ export default function TaskGrid() {
       if (event.oldValue === event.newValue) return;
       if (!field) return;
 
+      // Optimistically update rowData so AG Grid doesn't revert the edit
+      patchTaskLocal(rowId, { [field]: newValue } as Partial<Task>);
+
       if (!pendingUpdates.current[rowId]) {
         pendingUpdates.current[rowId] = {};
       }
@@ -61,7 +64,7 @@ export default function TaskGrid() {
       clearTimeout(timers.current[rowId]);
       timers.current[rowId] = setTimeout(() => flushUpdate(rowId), 400);
     },
-    [flushUpdate]
+    [flushUpdate, patchTaskLocal]
   );
 
   // ── Add Task ───────────────────────────────────────────────────────────────
