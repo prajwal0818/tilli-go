@@ -93,9 +93,6 @@ const DateTimeEditor = forwardRef<DateTimeEditorHandle, ICellEditorParams<Task, 
     };
 
     const [value, setValue] = useState(toUtcInput(props.value));
-    // Ref keeps the latest value synchronously so AG Grid's getValue()
-    // always reads the committed value even before React re-renders.
-    const valueRef = useRef(value);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -105,8 +102,8 @@ const DateTimeEditor = forwardRef<DateTimeEditorHandle, ICellEditorParams<Task, 
 
     useImperativeHandle(ref, () => ({
       getValue() {
-        // The input value is in UTC — append "Z" to ensure correct parsing
-        const v = valueRef.current;
+        // Read directly from the DOM to avoid React state batching issues
+        const v = inputRef.current?.value || '';
         return v ? new Date(v + 'Z').toISOString() : null;
       },
       isPopup() {
@@ -114,18 +111,12 @@ const DateTimeEditor = forwardRef<DateTimeEditorHandle, ICellEditorParams<Task, 
       },
     }));
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const v = e.target.value;
-      valueRef.current = v;
-      setValue(v);
-    };
-
     return (
       <input
         ref={inputRef}
         type="datetime-local"
         value={value}
-        onChange={handleChange}
+        onChange={(e) => setValue(e.target.value)}
         style={{
           width: '100%',
           height: '100%',
