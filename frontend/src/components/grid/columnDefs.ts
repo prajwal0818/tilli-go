@@ -78,6 +78,7 @@ export const columnDefs: ColDef<Task>[] = [
     width: 200,
     cellRenderer: DependencyRenderer,
     cellEditor: DependencyEditor,
+    cellEditorPopup: true,
     editable: isEditable,
   },
   {
@@ -86,6 +87,7 @@ export const columnDefs: ColDef<Task>[] = [
     width: 190,
     cellRenderer: DateTimeRenderer,
     cellEditor: DateTimeEditor,
+    cellEditorPopup: true,
     editable: isEditable,
   },
   {
@@ -94,6 +96,7 @@ export const columnDefs: ColDef<Task>[] = [
     width: 190,
     cellRenderer: DateTimeRenderer,
     cellEditor: DateTimeEditor,
+    cellEditorPopup: true,
     editable: isEditable,
   },
   {

@@ -43,28 +43,42 @@ export default function TaskGrid() {
     [updateTask, fetchTasks]
   );
 
-  const onCellValueChanged = useCallback(
-    (event: CellValueChangedEvent<Task>) => {
-      const { data, colDef, newValue } = event;
-      if (!data) return;
-      const rowId = data.id;
-      const field = colDef.field as keyof UpdateTaskInput | undefined;
-
-      if (event.oldValue === event.newValue) return;
-      if (!field) return;
-
-      // Optimistically update rowData so AG Grid doesn't revert the edit
-      patchTaskLocal(rowId, { [field]: newValue } as Partial<Task>);
+  /** Apply a single field update: optimistic patch + debounced API call.
+   *  Called directly by popup editors via context, and also from onCellValueChanged. */
+  const applyFieldUpdate = useCallback(
+    (rowId: string, field: string, value: unknown) => {
+      patchTaskLocal(rowId, { [field]: value } as Partial<Task>);
 
       if (!pendingUpdates.current[rowId]) {
         pendingUpdates.current[rowId] = {};
       }
-      (pendingUpdates.current[rowId] as Record<string, unknown>)[field] = newValue;
+      (pendingUpdates.current[rowId] as Record<string, unknown>)[field] = value;
 
       clearTimeout(timers.current[rowId]);
       timers.current[rowId] = setTimeout(() => flushUpdate(rowId), 400);
     },
     [flushUpdate, patchTaskLocal]
+  );
+
+  const onCellValueChanged = useCallback(
+    (event: CellValueChangedEvent<Task>) => {
+      const { data, colDef, newValue } = event;
+      if (!data) return;
+      const field = colDef.field as keyof UpdateTaskInput | undefined;
+
+      if (event.oldValue === event.newValue) return;
+      if (!field) return;
+
+      applyFieldUpdate(data.id, field, newValue);
+    },
+    [applyFieldUpdate]
+  );
+
+  /** Passed to AG Grid `context` so popup editors can update fields directly,
+   *  bypassing the cellValueChanged event which can be unreliable for popups. */
+  const gridContext = useMemo(
+    () => ({ applyFieldUpdate }),
+    [applyFieldUpdate]
   );
 
   // ── Add Task ───────────────────────────────────────────────────────────────
@@ -201,6 +215,7 @@ export default function TaskGrid() {
           rowClassRules={rowClassRules}
           rowSelection="multiple"
           onCellValueChanged={onCellValueChanged}
+          context={gridContext}
           singleClickEdit
           stopEditingWhenCellsLoseFocus
           undoRedoCellEditing

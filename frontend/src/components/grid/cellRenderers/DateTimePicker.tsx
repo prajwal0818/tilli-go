@@ -8,6 +8,16 @@ import {
 import type { ICellEditorParams, ICellRendererParams } from 'ag-grid-community';
 import type { Task } from '../../../types';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Convert ISO UTC string to "YYYY-MM-DDTHH:mm" in UTC (no timezone shift). */
+function toUtcInput(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
+
 // ── Cell Renderer ─────────────────────────────────────────────────────────────
 
 export function DateTimeRenderer(params: ICellRendererParams<Task, string | null>) {
@@ -76,58 +86,134 @@ interface DateTimeEditorHandle {
 
 /**
  * AG Grid custom cell editor for datetime fields.
- * Uses HTML5 <input type="datetime-local">.
+ * Renders as a popup so the native date picker doesn't cause
+ * premature editor closure via stopEditingWhenCellsLoseFocus.
  *
  * Input:  ISO string ("2026-04-16T11:00:00.000Z") or null
  * Output: ISO string or null
  */
 const DateTimeEditor = forwardRef<DateTimeEditorHandle, ICellEditorParams<Task, string | null>>(
   (props, ref) => {
-    // Convert ISO UTC string to "YYYY-MM-DDTHH:mm" format in UTC
-    // so the user edits in UTC and no timezone shift occurs on save.
-    const toUtcInput = (iso: string | null | undefined): string => {
-      if (!iso) return '';
-      const d = new Date(iso);
-      const pad = (n: number) => String(n).padStart(2, '0');
-      return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-    };
-
     const [value, setValue] = useState(toUtcInput(props.value));
     const inputRef = useRef<HTMLInputElement>(null);
+    const field = props.colDef.field!;
+    const rowId = props.data!.id;
+    const applyFieldUpdate = props.context?.applyFieldUpdate as
+      | ((rowId: string, field: string, value: unknown) => void)
+      | undefined;
+
+    /** Read the current value from the DOM (avoids React state batching issues). */
+    const readDom = (): string | null => {
+      const v = inputRef.current?.value || '';
+      return v ? new Date(v + 'Z').toISOString() : null;
+    };
 
     useEffect(() => {
-      inputRef.current?.focus();
-      inputRef.current?.showPicker?.();
+      const id = requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        try { inputRef.current?.showPicker?.(); } catch { /* not all browsers support this */ }
+      });
+      return () => cancelAnimationFrame(id);
     }, []);
 
     useImperativeHandle(ref, () => ({
       getValue() {
-        // Read directly from the DOM to avoid React state batching issues
-        const v = inputRef.current?.value || '';
-        return v ? new Date(v + 'Z').toISOString() : null;
+        return readDom();
       },
       isPopup() {
-        return false;
+        return true;
       },
     }));
 
+    const handleSet = () => {
+      const isoValue = readDom();
+      // Explicitly push the update through context so it persists
+      // even if AG Grid's cellValueChanged doesn't fire for popup editors.
+      applyFieldUpdate?.(rowId, field, isoValue);
+      props.stopEditing();
+    };
+
+    const handleClear = () => {
+      if (inputRef.current) inputRef.current.value = '';
+      setValue('');
+      applyFieldUpdate?.(rowId, field, null);
+      props.stopEditing();
+    };
+
     return (
-      <input
-        ref={inputRef}
-        type="datetime-local"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
+      <div
         style={{
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          outline: 'none',
-          padding: '0 4px',
-          fontSize: '13px',
+          background: 'white',
+          border: '1px solid #d1d5db',
+          borderRadius: '6px',
+          padding: '10px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          minWidth: '230px',
           fontFamily: 'inherit',
-          boxSizing: 'border-box',
         }}
-      />
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <label style={{ fontSize: '11px', fontWeight: 600, color: '#57534e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Date &amp; Time (UTC)
+        </label>
+        <input
+          ref={inputRef}
+          type="datetime-local"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); handleSet(); }
+            if (e.key === 'Escape') { e.preventDefault(); props.stopEditing(); }
+          }}
+          style={{
+            width: '100%',
+            padding: '6px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            fontSize: '13px',
+            fontFamily: 'inherit',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+        />
+        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={handleClear}
+            style={{
+              padding: '4px 10px',
+              fontSize: '12px',
+              fontFamily: 'inherit',
+              border: '1px solid #d1d5db',
+              borderRadius: '4px',
+              background: 'white',
+              color: '#57534e',
+              cursor: 'pointer',
+            }}
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={handleSet}
+            style={{
+              padding: '4px 10px',
+              fontSize: '12px',
+              fontFamily: 'inherit',
+              border: 'none',
+              borderRadius: '4px',
+              background: '#115e59',
+              color: 'white',
+              cursor: 'pointer',
+            }}
+          >
+            Set
+          </button>
+        </div>
+      </div>
     );
   }
 );
