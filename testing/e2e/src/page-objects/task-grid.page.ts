@@ -155,12 +155,12 @@ export class TaskGridPage {
 
   /**
    * Get the dependency editor container.
-   * AG Grid 32 renders the DependencyEditor inline inside the cell rather than
-   * in a separate `.ag-popup-editor` overlay. Locate it by navigating from the
-   * unique "Search tasks..." input up to its parent container div.
+   * The DependencyEditor is rendered as a popup; its root container is two
+   * levels above the search input (input → search-wrapper → editor root).
+   * We locate the nearest ancestor with the characteristic 280px-wide box.
    */
   getDependencyPopup(): Locator {
-    return this.page.getByPlaceholder('Search tasks...').locator('..');
+    return this.page.locator('.ag-popup-editor');
   }
 
   /** Get the search input inside the dependency editor. */
@@ -168,14 +168,26 @@ export class TaskGridPage {
     return this.page.getByPlaceholder('Search tasks...');
   }
 
-  /** Get a specific checkbox by task name inside the dependency editor. */
-  getDependencyCheckbox(taskName: string): Locator {
-    return this.getDependencyPopup().locator('label').filter({ hasText: taskName }).locator('input[type="checkbox"]');
+  /** Get a task option in the available list by task name. Uses role="option" divs. */
+  getDependencyOption(taskName: string): Locator {
+    return this.getDependencyPopup().locator('[role="option"]').filter({ hasText: taskName });
   }
 
-  /** Get the "N selected" count text from the dependency editor. */
-  getDependencySelectedCount(): Locator {
-    return this.getDependencyPopup().locator('div').filter({ hasText: /selected/ }).last();
+  /** Get all available task options in the dependency editor. */
+  getDependencyOptions(): Locator {
+    return this.getDependencyPopup().locator('[role="option"]');
+  }
+
+  /** Get the "Selected (N)" header from the dependency editor. Only visible when count > 0. */
+  getDependencySelectedHeader(): Locator {
+    return this.getDependencyPopup().getByText(/^Selected \(\d+\)$/);
+  }
+
+  /** Click the Done button in the dependency editor to apply changes. */
+  async clickDependencyDone(): Promise<void> {
+    const done = this.getDependencyPopup().getByRole('button', { name: 'Done' });
+    await done.click();
+    await this.page.waitForTimeout(600);
   }
 
   /** Check if a row has a specific CSS class (e.g. row-status-pending). */

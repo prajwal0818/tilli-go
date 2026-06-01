@@ -172,6 +172,24 @@ export class ApiHelper {
     return { status: res.status, body };
   }
 
+  // ── Complete ─────────────────────────────────────────────────────────
+
+  /**
+   * Call the /api/complete endpoint with a fake token.
+   * Returns { status, body } for assertion — expects errors since we
+   * can't generate valid HMAC tokens from the test side.
+   */
+  async completeTaskExpectError(
+    taskId: string,
+    token: string = 'fake-token',
+  ): Promise<{ status: number; body: Record<string, unknown> }> {
+    const res = await fetch(
+      `${this.baseUrl}/api/complete?task_id=${taskId}&token=${token}`,
+    );
+    const body = await res.json();
+    return { status: res.status, body };
+  }
+
   // ── Scheduler ─────────────────────────────────────────────────────────
 
   async triggerScheduler(): Promise<unknown> {

@@ -5,10 +5,11 @@ import { uniqueProjectCode, uniqueProjectName } from '../helpers/constants';
 test.describe('Task Dependencies', () => {
   let grid: TaskGridPage;
   let projectId: string;
+  let projectCode: string;
 
   test.beforeEach(async ({ authenticatedPage, apiHelper }) => {
-    const code = uniqueProjectCode();
-    const project = await apiHelper.createProject(uniqueProjectName(), code);
+    projectCode = uniqueProjectCode();
+    const project = await apiHelper.createProject(uniqueProjectName(), projectCode);
     projectId = project.id;
 
     await authenticatedPage.evaluate((pid) => {
@@ -36,9 +37,10 @@ test.describe('Task Dependencies', () => {
     await grid.goto();
     await grid.waitForGrid();
 
-    // Task Beta (row 1) should show "Task Alpha" in the dependencies column
+    // Task Beta (row 1) should show Task Alpha's display ID in the dependencies column
     const depText = await grid.getCellText(1, 'dependencies');
-    expect(depText).toContain('Task Alpha');
+    const expectedDisplayId = `${projectCode}-${taskA.sequenceNumber}`;
+    expect(depText).toContain(expectedDisplayId);
   });
 
   test('dependency editor popup opens on click', async ({ authenticatedPage, apiHelper }) => {
@@ -63,39 +65,40 @@ test.describe('Task Dependencies', () => {
     const popup = grid.getDependencyPopup();
     await expect(popup).toBeVisible({ timeout: 3000 });
 
-    // Should list "Other Task" but NOT "Self Task"
-    const labels = popup.locator('label');
-    const count = await labels.count();
+    // Editor uses div[role="option"] elements for available tasks
+    const options = grid.getDependencyOptions();
+    const count = await options.count();
     const texts: string[] = [];
     for (let i = 0; i < count; i++) {
-      texts.push((await labels.nth(i).textContent()) || '');
+      texts.push((await options.nth(i).textContent()) || '');
     }
 
+    // Should list "Other Task" but NOT "Self Task"
     expect(texts.some((t) => t.includes('Other Task'))).toBe(true);
     expect(texts.some((t) => t.includes('Self Task'))).toBe(false);
   });
 
-  test('select dependency via checkbox updates selected count', async ({ authenticatedPage, apiHelper }) => {
+  test('select dependency via click updates selected section', async ({ authenticatedPage, apiHelper }) => {
     await apiHelper.createTask(projectId, 'Dep Source');
     await apiHelper.createTask(projectId, 'Dep Target');
     await grid.goto();
     await grid.waitForGrid();
 
-    // Open dep editor for Task B (row 1) and check "Dep Source"
+    // Open dep editor for Task B (row 1) and click "Dep Source"
     await grid.openDependencyEditor(1);
     const popup = grid.getDependencyPopup();
     await expect(popup).toBeVisible({ timeout: 3000 });
 
-    // Verify initial count is 0
-    const counter = grid.getDependencySelectedCount();
-    await expect(counter).toContainText('0 selected');
+    // Initially, no "Selected" header should be visible (0 selected)
+    const selectedHeader = grid.getDependencySelectedHeader();
+    await expect(selectedHeader).not.toBeVisible();
 
-    // Check the checkbox
-    const checkbox = grid.getDependencyCheckbox('Dep Source');
-    await checkbox.check();
+    // Click the option to add it
+    const option = grid.getDependencyOption('Dep Source');
+    await option.click();
 
-    // Verify count updates to 1
-    await expect(counter).toContainText('1 selected');
+    // "Selected (1)" header should now appear
+    await expect(selectedHeader).toContainText('Selected (1)');
   });
 
   test('search filter works', async ({ authenticatedPage, apiHelper }) => {
@@ -115,10 +118,10 @@ test.describe('Task Dependencies', () => {
     await searchInput.fill('Beta');
     await grid.page.waitForTimeout(200);
 
-    // Should only show "Beta Rollback"
-    const labels = popup.locator('label');
-    await expect(labels).toHaveCount(1);
-    await expect(labels.first()).toContainText('Beta Rollback');
+    // Should only show "Beta Rollback" in the available options
+    const options = grid.getDependencyOptions();
+    await expect(options).toHaveCount(1);
+    await expect(options.first()).toContainText('Beta Rollback');
   });
 
   test('cycle detection rejected by API', async ({ authenticatedPage, apiHelper }) => {
@@ -158,9 +161,9 @@ test.describe('Task Dependencies', () => {
     await grid.goto();
     await grid.waitForGrid();
 
-    // taskC is row 2 (created last)
+    // taskC is row 2 (created last) — dependencies show display IDs
     const depText = await grid.getCellText(2, 'dependencies');
-    expect(depText).toContain('Dep One');
-    expect(depText).toContain('Dep Two');
+    expect(depText).toContain(`${projectCode}-${taskA.sequenceNumber}`);
+    expect(depText).toContain(`${projectCode}-${taskB.sequenceNumber}`);
   });
 });
