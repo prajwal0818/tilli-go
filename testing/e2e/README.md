@@ -1,4 +1,4 @@
-# DeployFlow — Playwright E2E Tests
+# Tilli-go — Playwright E2E Tests
 
 End-to-end browser tests for DeployFlow using Playwright.
 
