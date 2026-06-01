@@ -2,6 +2,7 @@ import { Router } from 'express';
 import taskRoutes from './taskRoutes';
 import authRoutes from './authRoutes';
 import acknowledgeRoutes from './acknowledgeRoutes';
+import completeRoutes from './completeRoutes';
 import projectRoutes from './projectRoutes';
 import auth from '../middleware/auth';
 import * as scheduler from '../services/schedulerService';
@@ -12,6 +13,7 @@ router.use('/auth', authRoutes);
 router.use('/tasks', taskRoutes);
 router.use('/projects', projectRoutes);
 router.use('/acknowledge', acknowledgeRoutes);
+router.use('/complete', completeRoutes);
 
 router.get('/scheduler/status', auth, (_req, res) => {
   res.json(scheduler.getStats());

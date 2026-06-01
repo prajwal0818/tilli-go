@@ -79,6 +79,14 @@ export interface AcknowledgeResponse {
   actualStartTime: string | null;
 }
 
+export interface CompleteResponse {
+  message: string;
+  taskId: string;
+  taskName: string;
+  status: string;
+  actualEndTime: string | null;
+}
+
 // ── Input types for API calls ────────────────────────────────────────────────
 
 export interface CreateTaskInput {

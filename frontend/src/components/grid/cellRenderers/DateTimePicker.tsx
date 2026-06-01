@@ -10,12 +10,12 @@ import type { Task } from '../../../types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Convert ISO UTC string to "YYYY-MM-DDTHH:mm" in UTC (no timezone shift). */
-function toUtcInput(iso: string | null | undefined): string {
+/** Convert ISO string to "YYYY-MM-DDTHH:mm" in the browser's local timezone. */
+function toLocalInput(iso: string | null | undefined): string {
   if (!iso) return '';
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 // ── Cell Renderer ─────────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ interface DateTimeEditorHandle {
  */
 const DateTimeEditor = forwardRef<DateTimeEditorHandle, ICellEditorParams<Task, string | null>>(
   (props, ref) => {
-    const [value, setValue] = useState(toUtcInput(props.value));
+    const [value, setValue] = useState(toLocalInput(props.value));
     const inputRef = useRef<HTMLInputElement>(null);
     const field = props.colDef.field!;
     const rowId = props.data!.id;
@@ -105,7 +105,7 @@ const DateTimeEditor = forwardRef<DateTimeEditorHandle, ICellEditorParams<Task, 
     /** Read the current value from the DOM (avoids React state batching issues). */
     const readDom = (): string | null => {
       const v = inputRef.current?.value || '';
-      return v ? new Date(v + 'Z').toISOString() : null;
+      return v ? new Date(v).toISOString() : null;
     };
 
     useEffect(() => {
@@ -157,7 +157,7 @@ const DateTimeEditor = forwardRef<DateTimeEditorHandle, ICellEditorParams<Task, 
         onMouseDown={(e) => e.stopPropagation()}
       >
         <label style={{ fontSize: '11px', fontWeight: 600, color: '#57534e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Date &amp; Time (UTC)
+          Date &amp; Time (Local)
         </label>
         <input
           ref={inputRef}

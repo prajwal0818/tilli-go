@@ -26,7 +26,7 @@ export interface TaskJobInput {
 /** Payload enqueued to email-queue by the task processor */
 export interface EmailJobPayload {
   taskId: string;
-  type: 'triggered';
+  type: 'triggered' | 'completion';
 }
 
 // ── Scheduler ───────────────────────────────────────────────────────────────
@@ -36,6 +36,7 @@ export interface SchedulerStats {
   lastRunAt: string | null;
   lastRunDurationMs: number | null;
   tasksEnqueued: number;
+  tasksCompletionEnqueued: number;
   tasksBlocked: number;
   tasksUnblocked: number;
   errors: number;

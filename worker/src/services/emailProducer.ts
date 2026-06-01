@@ -13,7 +13,7 @@ const emailQueue = new Queue<EmailJobPayload>('email-queue', {
 });
 
 export async function addEmailJob(data: EmailJobPayload): Promise<void> {
-  const jobId = `email-${data.taskId}-triggered`;
+  const jobId = `email-${data.taskId}-${data.type || 'triggered'}`;
 
   await emailQueue.add('send-email', data, {
     jobId,

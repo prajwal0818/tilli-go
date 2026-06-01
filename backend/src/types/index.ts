@@ -50,6 +50,7 @@ export type {
   ApiErrorResponse,
   AcknowledgeSuccessResponse,
   AcknowledgeConflictResponse,
+  CompleteSuccessResponse,
   AuthenticatedRequest,
   AckTokenData,
 } from './api';

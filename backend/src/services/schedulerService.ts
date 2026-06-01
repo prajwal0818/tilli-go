@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
 import { canTaskExecute } from './dependencyService';
-import { addTaskJob } from './queueService';
+import { addTaskJob, addCompletionJob } from './queueService';
 import logger from '../config/logger';
 import type { SchedulerStats } from '../types';
 
@@ -15,6 +15,7 @@ const stats: Omit<SchedulerStats, 'running'> = {
   lastRunAt: null,
   lastRunDurationMs: null,
   tasksEnqueued: 0,
+  tasksCompletionEnqueued: 0,
   tasksBlocked: 0,
   tasksUnblocked: 0,
   errors: 0,
@@ -42,6 +43,7 @@ export async function tick(): Promise<void> {
   running = true;
   const start = Date.now();
   let enqueued = 0;
+  let completionEnqueued = 0;
   let blocked = 0;
   let unblocked = 0;
 
@@ -163,16 +165,47 @@ export async function tick(): Promise<void> {
       }
     }
 
+    // ── Phase 3: Completion — enqueue completion emails ─────────────────
+    // Acknowledged tasks whose plannedEndTime has passed get a completion email.
+
+    const completionCandidates = await prisma.task.findMany({
+      where: {
+        status: 'Acknowledged',
+        plannedEndTime: { lte: now },
+      },
+      select: {
+        id: true,
+        taskName: true,
+        system: true,
+        assignedTeam: true,
+        assignedUserId: true,
+      },
+    });
+
+    for (const task of completionCandidates) {
+      try {
+        await addCompletionJob(task);
+        completionEnqueued++;
+      } catch (err: unknown) {
+        stats.errors++;
+        logger.error(
+          { taskId: task.id, err: err instanceof Error ? err.message : String(err) },
+          'Completion job enqueue failed'
+        );
+      }
+    }
+
     const durationMs = Date.now() - start;
     stats.lastRunAt = now.toISOString();
     stats.lastRunDurationMs = durationMs;
     stats.tasksEnqueued += enqueued;
+    stats.tasksCompletionEnqueued += completionEnqueued;
     stats.tasksBlocked += blocked;
     stats.tasksUnblocked += unblocked;
 
-    if (enqueued > 0 || blocked > 0 || unblocked > 0) {
+    if (enqueued > 0 || blocked > 0 || unblocked > 0 || completionEnqueued > 0) {
       logger.info(
-        { enqueued, blocked, unblocked, durationMs },
+        { enqueued, completionEnqueued, blocked, unblocked, durationMs },
         'Scheduler tick completed'
       );
     }

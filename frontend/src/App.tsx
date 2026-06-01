@@ -11,6 +11,7 @@ import TaskGrid from './components/grid/TaskGrid';
 import Profile from './components/profile/Profile';
 import Projects from './components/projects/Projects';
 import AcknowledgePage from './components/acknowledge/AcknowledgePage';
+import CompletePage from './components/acknowledge/CompletePage';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import ToastContainer from './components/ui/Toast';
 import { projectService } from './services/projectService';
@@ -113,6 +114,7 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/acknowledge" element={<AcknowledgePage />} />
+            <Route path="/complete" element={<CompletePage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<MainLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />

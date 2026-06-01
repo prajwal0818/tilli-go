@@ -67,6 +67,34 @@ export async function addEmailJob(data: EmailJobPayload): Promise<void> {
   logger.info({ jobId, taskId: data.taskId }, 'Email job enqueued');
 }
 
+/**
+ * Enqueue a completion job for the worker to send a completion email.
+ * Called by the scheduler when an Acknowledged task's plannedEndTime has passed.
+ */
+export async function addCompletionJob(task: TaskJobInput): Promise<void> {
+  const jobId = `task-complete-${task.id}`;
+
+  await taskQueue.add(
+    'process-completion',
+    {
+      taskId: task.id,
+      taskName: task.taskName,
+      system: task.system,
+      assignedTeam: task.assignedTeam,
+      assignedUserId: task.assignedUserId,
+    },
+    {
+      jobId,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: { age: 86400 },
+      removeOnFail: { age: 7 * 86400 },
+    }
+  );
+
+  logger.info({ jobId, taskId: task.id }, 'Completion job enqueued');
+}
+
 export async function close(): Promise<void> {
   await taskQueue.close();
   await emailQueue.close();

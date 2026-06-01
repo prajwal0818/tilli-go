@@ -37,7 +37,7 @@ export function signAckToken(taskId: string): string {
 
 export function buildAckUrl(taskId: string): string {
   const token = signAckToken(taskId);
-  return `${config.frontendUrl}/acknowledge?task_id=${taskId}&token=${token}`;
+  return `${config.frontendUrl}/#/acknowledge?task_id=${taskId}&token=${token}`;
 }
 
 // ── Email building ───────────────────────────────────────────────────────────
@@ -63,6 +63,60 @@ function buildTaskEmailHtml(task: TaskForEmail, ackUrl: string): string {
     `<p><a href="${ackUrl}" style="padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;">Acknowledge Task</a></p>`,
     `<p style="color:#666;font-size:12px;">Or copy this link: ${ackUrl}</p>`,
   ].join('\n');
+}
+
+// ── Completion email ────────────────────────────────────────────────────────
+
+export function buildCompleteUrl(taskId: string): string {
+  const token = signAckToken(taskId);
+  return `${config.frontendUrl}/#/complete?task_id=${taskId}&token=${token}`;
+}
+
+function buildCompletionEmailHtml(task: TaskForEmail, completeUrl: string): string {
+  return [
+    `<h2>Task Ready for Completion: ${task.taskName}</h2>`,
+    `<p><strong>System:</strong> ${task.system}</p>`,
+    `<p><strong>Team:</strong> ${task.assignedTeam || 'Unassigned'}</p>`,
+    task.description
+      ? `<p><strong>Description:</strong> ${task.description}</p>`
+      : '',
+    '<br/>',
+    `<p><a href="${completeUrl}" style="padding:10px 20px;background:#16a34a;color:#fff;text-decoration:none;border-radius:4px;">Complete Task</a></p>`,
+    `<p style="color:#666;font-size:12px;">Or copy this link: ${completeUrl}</p>`,
+  ].join('\n');
+}
+
+export async function sendCompletionEmail(task: TaskForEmail): Promise<EmailResult> {
+  const to =
+    task.assignedUser?.email ||
+    `${task.assignedTeam || config.email.fallbackTeam}@${config.email.domain}`;
+  const subject = `[Tilli-go] Task ready for completion: ${task.taskName}`;
+  const completeUrl = buildCompleteUrl(task.id);
+  const html = buildCompletionEmailHtml(task, completeUrl);
+
+  if (config.microsoft.mailEnabled) {
+    const messageId = await sendEmailViaGraph(to, subject, html);
+    return { messageId };
+  }
+
+  const fromAddress = config.email.fromAddress || `noreply@${config.email.domain}`;
+  const info = await transporter.sendMail({
+    from: `"${config.email.fromName}" <${fromAddress}>`,
+    to,
+    subject,
+    html,
+  });
+
+  const messageId: string = isMock
+    ? info.messageId || `mock-${Date.now()}`
+    : info.messageId;
+
+  logger.info(
+    { to, subject, messageId, mock: isMock },
+    isMock ? 'MOCK COMPLETION EMAIL SENT' : 'COMPLETION EMAIL SENT',
+  );
+
+  return { messageId };
 }
 
 // ── Main interface ───────────────────────────────────────────────────────────

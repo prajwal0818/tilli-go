@@ -50,6 +50,16 @@ export interface AuthenticatedRequest extends Request {
   dependencyCheck?: DependencyCheckResult;
 }
 
+// ── Complete endpoint responses ──────────────────────────────────────────
+
+export interface CompleteSuccessResponse {
+  message: string;
+  taskId: string;
+  taskName: string;
+  status: string;
+  actualEndTime: Date | null;
+}
+
 /** Decoded acknowledgement token payload */
 export interface AckTokenData {
   taskId: string;

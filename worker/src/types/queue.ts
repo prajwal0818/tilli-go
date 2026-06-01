@@ -14,12 +14,13 @@ export interface TaskJobPayload {
 /** Payload enqueued to email-queue by the task processor */
 export interface EmailJobPayload {
   taskId: string;
+  type?: 'triggered' | 'completion';
 }
 
 // ── Processor results ────────────────────────────────────────────────────────
 
 export interface TaskProcessorResult {
-  status: 'skipped' | 'triggered';
+  status: 'skipped' | 'triggered' | 'completion_enqueued';
   reason?: string;
   taskId?: string;
 }

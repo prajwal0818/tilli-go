@@ -2,7 +2,7 @@ import { Job } from 'bullmq';
 import prisma from '../config/prisma';
 import logger from '../config/logger';
 import config from '../config';
-import { sendEmail } from '../services/emailService';
+import { sendEmail, sendCompletionEmail } from '../services/emailService';
 import type { EmailJobPayload, EmailProcessorResult } from '../types';
 
 /**
@@ -19,8 +19,8 @@ import type { EmailJobPayload, EmailProcessorResult } from '../types';
  * The status check here prevents duplicate sends on retry after partial failure.
  */
 const processor = async (job: Job<EmailJobPayload>): Promise<EmailProcessorResult> => {
-  const { taskId } = job.data;
-  const log = logger.child({ jobId: job.id, taskId });
+  const { taskId, type } = job.data;
+  const log = logger.child({ jobId: job.id, taskId, emailType: type });
 
   log.info('Processing email job');
 
@@ -37,7 +37,45 @@ const processor = async (job: Job<EmailJobPayload>): Promise<EmailProcessorResul
     return { status: 'skipped', reason: 'task_not_found' };
   }
 
-  // ── 2. Idempotency ──────────────────────────────────────────────────
+  // ── 2. Route by email type ────────────────────────────────────────────
+  if (type === 'completion') {
+    // Completion emails are only sent for Acknowledged tasks
+    if (task.status !== 'Acknowledged') {
+      log.info(
+        { currentStatus: task.status },
+        'Task not Acknowledged — skipping completion email'
+      );
+      return { status: 'skipped', reason: 'status_moved_on' };
+    }
+
+    const to =
+      task.assignedUser?.email ||
+      `${task.assignedTeam || config.email.fallbackTeam}@${config.email.domain}`;
+
+    const result = await sendCompletionEmail(task);
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          taskId,
+          action: 'EMAIL_SENT',
+          field: null,
+          oldValue: null,
+          newValue: `type=completion to=${to} messageId=${result.messageId}`,
+        },
+      });
+    } catch (auditErr: unknown) {
+      log.error(
+        { err: auditErr instanceof Error ? auditErr.message : String(auditErr), messageId: result.messageId },
+        'Completion email sent but audit log write failed'
+      );
+    }
+
+    log.info({ messageId: result.messageId }, 'Completion email sent successfully');
+    return { status: 'sent', messageId: result.messageId };
+  }
+
+  // ── Default: trigger email ───────────────────────────────────────────
   if (task.status !== 'Triggered') {
     log.info(
       { currentStatus: task.status },
