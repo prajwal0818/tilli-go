@@ -8,14 +8,27 @@ const INSECURE_DEFAULTS = [
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// ── Required env var validation ─────────────────────────────────────────────
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    'FATAL: DATABASE_URL is not set. The API cannot start without a database connection string.',
+  );
+}
+
 const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error(
+    'FATAL: JWT_SECRET is not set. Set a secret for JWT token signing.',
+  );
+}
+
 const ackTokenSecret =
   process.env.ACK_TOKEN_SECRET || 'dev-ack-secret-change-in-production';
 
 if (isProduction) {
-  if (!jwtSecret || INSECURE_DEFAULTS.includes(jwtSecret)) {
+  if (INSECURE_DEFAULTS.includes(jwtSecret)) {
     throw new Error(
-      'FATAL: JWT_SECRET is missing or using an insecure default. Set a strong secret in production.'
+      'FATAL: JWT_SECRET is using an insecure default. Set a strong secret in production.'
     );
   }
   if (!ackTokenSecret || INSECURE_DEFAULTS.includes(ackTokenSecret)) {

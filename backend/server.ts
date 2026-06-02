@@ -6,21 +6,32 @@ import * as scheduler from './src/services/schedulerService';
 import * as queueService from './src/services/queueService';
 
 const PORT = config.apiPort;
+const SHUTDOWN_TIMEOUT_MS = 25_000;
 
 const server = app.listen(PORT, () => {
   logger.info(`Tilli-go API running on port ${PORT}`);
   scheduler.start();
 });
 
-// Graceful shutdown
+// Graceful shutdown with timeout
 const shutdown = async (signal: string): Promise<void> => {
   logger.info(`${signal} received — shutting down`);
   scheduler.stop();
+
+  const forceExit = setTimeout(() => {
+    logger.error('Shutdown timed out — forcing exit');
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+
   server.close(async () => {
-    await queueService.close();
-    await prisma.$disconnect();
-    logger.info('Server closed');
-    process.exit(0);
+    try {
+      await queueService.close();
+      await prisma.$disconnect();
+      logger.info('Server closed');
+    } finally {
+      clearTimeout(forceExit);
+      process.exit(0);
+    }
   });
 };
 

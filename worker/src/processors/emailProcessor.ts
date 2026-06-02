@@ -58,7 +58,7 @@ const processor = async (job: Job<EmailJobPayload>): Promise<EmailProcessorResul
       await prisma.auditLog.create({
         data: {
           taskId,
-          action: 'EMAIL_SENT',
+          action: 'SYSTEM_EMAIL_SENT',
           field: null,
           oldValue: null,
           newValue: `type=completion to=${to} messageId=${result.messageId}`,

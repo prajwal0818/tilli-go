@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { useTaskData } from '../../hooks/useTaskData';
 import { useNavigate } from 'react-router-dom';
 import { ProjectContext } from '../../App';
@@ -111,6 +111,14 @@ export default function Dashboard() {
   const { tasks, loading, error, fetchTasks } = useTaskData(selectedProjectId);
   const navigate = useNavigate();
 
+  const recentTasks = useMemo(
+    () =>
+      [...tasks]
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+        .slice(0, 8),
+    [tasks],
+  );
+
   if (!selectedProjectId) {
     return (
       <div className="flex items-center justify-center h-full text-text-secondary">
@@ -151,10 +159,6 @@ export default function Dashboard() {
   tasks.forEach((t) => {
     if (t.status in counts) counts[t.status]++;
   });
-
-  const recentTasks = [...tasks]
-    .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
-    .slice(0, 8);
 
   return (
     <div

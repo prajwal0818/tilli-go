@@ -8,21 +8,31 @@ interface RateLimiterOptions {
   keyPrefix?: string;
 }
 
+// Lua script: atomically clean expired entries, add new entry, count, and set TTL.
+// Returns the count of entries in the window.
+const LUA_SCRIPT = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local member = ARGV[3]
+local ttl = tonumber(ARGV[4])
+
+redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
+redis.call('ZADD', key, now, member)
+local count = redis.call('ZCARD', key)
+redis.call('PEXPIRE', key, ttl)
+return count
+`;
+
 function rateLimiter({ windowMs = 60_000, max = 10, keyPrefix = 'rl' }: RateLimiterOptions = {}) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
     const key = `${keyPrefix}:${ip}`;
     const now = Date.now();
+    const member = `${now}:${Math.random()}`;
 
     try {
-      const pipe = redis.pipeline();
-      pipe.zremrangebyscore(key, 0, now - windowMs);
-      pipe.zadd(key, now, `${now}:${Math.random()}`);
-      pipe.zcard(key);
-      pipe.pexpire(key, windowMs);
-
-      const results = await pipe.exec();
-      const count = (results?.[2]?.[1] as number) ?? 0;
+      const count = (await redis.eval(LUA_SCRIPT, 1, key, now, windowMs, member, windowMs)) as number;
 
       res.set('X-RateLimit-Limit', String(max));
       res.set('X-RateLimit-Remaining', String(Math.max(0, max - count)));

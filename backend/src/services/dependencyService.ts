@@ -57,44 +57,80 @@ export async function canTaskExecute(taskId: string): Promise<DependencyCheckRes
 // worker code where you want a hard failure.
 
 export async function assertDependenciesMet(taskId: string): Promise<void> {
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
-    select: { id: true, projectId: true },
-  });
+  const result = await canTaskExecute(taskId);
 
-  if (!task) {
-    throw new AppError('Task not found', 404);
-  }
-
-  const dependencies = await prisma.taskDependency.findMany({
-    where: { taskId },
-    include: {
-      dependsOn: {
-        select: { id: true, taskName: true, status: true, projectId: true },
-      },
-    },
-  });
-
-  // Validate all dependencies are within the same project
-  for (const dep of dependencies) {
-    if (dep.dependsOn.projectId !== task.projectId) {
-      throw new AppError('Cross-project dependencies are not allowed', 400);
-    }
-  }
-
-  const blockingTasks = dependencies
-    .filter((dep) => dep.dependsOn.status !== TaskStatus.Completed)
-    .map((dep) => ({
-      taskName: dep.dependsOn.taskName,
-      status: dep.dependsOn.status,
-    }));
-
-  if (blockingTasks.length > 0) {
-    const names = blockingTasks
+  if (!result.executable) {
+    const names = result.blockingTasks
       .map((t) => `${t.taskName} (${t.status})`)
       .join(', ');
     throw new AppError(`Dependencies not completed: ${names}`, 400);
   }
+}
+
+// ── canTasksExecuteBatch ─────────────────────────────────────────────────────
+// Batch version: checks dependency status for multiple candidate tasks in two
+// queries total (one for tasks, one for all their deps). Returns a Map from
+// taskId → { executable, blockingDepIds }. Also validates cross-project deps.
+
+export interface BatchCheckResult {
+  executable: boolean;
+  blockingDepIds: string[];
+}
+
+export async function canTasksExecuteBatch(
+  candidateIds: string[],
+): Promise<Map<string, BatchCheckResult>> {
+  const results = new Map<string, BatchCheckResult>();
+  if (candidateIds.length === 0) return results;
+
+  // Fetch all candidates with their projectId
+  const candidates = await prisma.task.findMany({
+    where: { id: { in: candidateIds } },
+    select: { id: true, projectId: true },
+  });
+  const projectById = new Map(candidates.map((t) => [t.id, t.projectId]));
+
+  // Batch-load all dependencies for these candidates
+  const allDeps = await prisma.taskDependency.findMany({
+    where: { taskId: { in: candidateIds } },
+    include: {
+      dependsOn: { select: { id: true, status: true, projectId: true } },
+    },
+  });
+
+  // Group deps by taskId
+  const depsByTaskId = new Map<string, typeof allDeps>();
+  for (const dep of allDeps) {
+    if (!depsByTaskId.has(dep.taskId)) depsByTaskId.set(dep.taskId, []);
+    depsByTaskId.get(dep.taskId)!.push(dep);
+  }
+
+  for (const id of candidateIds) {
+    const deps = depsByTaskId.get(id) || [];
+    const taskProjectId = projectById.get(id);
+
+    // Validate cross-project deps
+    const hasCrossProject = deps.some(
+      (d) => taskProjectId && d.dependsOn.projectId !== taskProjectId,
+    );
+
+    if (hasCrossProject) {
+      // Cross-project dependency found — treat as not executable
+      results.set(id, { executable: false, blockingDepIds: deps.map((d) => d.dependsOn.id) });
+      continue;
+    }
+
+    const blocking = deps.filter(
+      (d) => d.dependsOn.status !== TaskStatus.Completed,
+    );
+
+    results.set(id, {
+      executable: blocking.length === 0,
+      blockingDepIds: blocking.map((d) => d.dependsOn.id),
+    });
+  }
+
+  return results;
 }
 
 // ── wouldCreateCycle ────────────────────────────────────────────────────────
@@ -192,23 +228,30 @@ export async function setDependencies(taskId: string, dependencyIds: string[]): 
   }
 
   if (unique.length > 0) {
-    await validateDependenciesExist(unique);
-
-    // Cross-project check: all deps must be in the same project as the task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { projectId: true },
-    });
+    // Fetch the task and all dependency tasks in parallel (2 queries instead of 3)
+    const [task, depTasks] = await Promise.all([
+      prisma.task.findUnique({
+        where: { id: taskId },
+        select: { projectId: true },
+      }),
+      prisma.task.findMany({
+        where: { id: { in: unique } },
+        select: { id: true, projectId: true },
+      }),
+    ]);
 
     if (!task) {
       throw new AppError('Task not found', 404);
     }
 
-    const depTasks = await prisma.task.findMany({
-      where: { id: { in: unique } },
-      select: { id: true, projectId: true },
-    });
+    // Validate all dependency tasks exist
+    if (depTasks.length !== unique.length) {
+      const foundIds = new Set(depTasks.map((t) => t.id));
+      const missing = unique.filter((id) => !foundIds.has(id));
+      throw new AppError(`Dependency tasks not found: ${missing.join(', ')}`, 400);
+    }
 
+    // Cross-project check
     for (const dep of depTasks) {
       if (dep.projectId !== task.projectId) {
         throw new AppError('Cross-project dependencies are not allowed', 400);

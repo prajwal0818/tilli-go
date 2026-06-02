@@ -67,6 +67,7 @@ model Task {
   @@index([projectId])
   @@index([status, plannedStartTime])
   @@index([status])
+  @@index([assignedUserId])
   @@unique([projectId, sequenceNumber])
   @@map("tasks")
 }
@@ -80,6 +81,8 @@ model TaskDependency {
   dependsOn Task @relation("TaskDependedBy", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
 
   @@unique([taskId, dependsOnTaskId])
+  @@index([taskId])
+  @@index([dependsOnTaskId])
   @@map("task_dependencies")
 }
 
@@ -94,5 +97,6 @@ model AuditLog {
   userId    String?  @map("user_id")
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([taskId])
   @@map("audit_logs")
 }

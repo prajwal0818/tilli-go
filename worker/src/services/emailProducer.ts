@@ -1,15 +1,10 @@
 import { Queue } from 'bullmq';
-import config from '../config';
+import connection from '../config/redis';
 import logger from '../config/logger';
 import type { EmailJobPayload } from '../types';
 
 const emailQueue = new Queue<EmailJobPayload>('email-queue', {
-  connection: {
-    host: config.redis.host,
-    port: config.redis.port,
-    password: config.redis.password,
-    tls: config.redis.tls ? {} : undefined,
-  },
+  connection,
 });
 
 export async function addEmailJob(data: EmailJobPayload): Promise<void> {

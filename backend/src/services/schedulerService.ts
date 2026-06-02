@@ -1,6 +1,5 @@
-import { Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
-import { canTaskExecute } from './dependencyService';
+import { canTaskExecute, canTasksExecuteBatch } from './dependencyService';
 import { addTaskJob, addCompletionJob } from './queueService';
 import logger from '../config/logger';
 import type { SchedulerStats } from '../types';
@@ -29,10 +28,6 @@ export function getStats(): SchedulerStats {
 // Called every minute. Two phases:
 //   1. Re-evaluate Blocked tasks → move back to Pending if deps now met
 //   2. Find eligible Pending tasks → enqueue or mark Blocked
-
-type DepWithStatus = Prisma.TaskDependencyGetPayload<{
-  include: { dependsOn: { select: { id: true; status: true } } };
-}>;
 
 export async function tick(): Promise<void> {
   if (running) {
@@ -105,32 +100,14 @@ export async function tick(): Promise<void> {
       },
     });
 
-    // Batch-load all dependency info for candidates in a single query
+    // Batch dependency check with cross-project validation
     const candidateIds = candidates.map((t) => t.id);
-    const allDeps: DepWithStatus[] =
-      candidateIds.length > 0
-        ? await prisma.taskDependency.findMany({
-            where: { taskId: { in: candidateIds } },
-            include: {
-              dependsOn: { select: { id: true, status: true } },
-            },
-          })
-        : [];
-
-    // Group deps by taskId for O(1) lookup
-    const depsByTaskId = new Map<string, DepWithStatus[]>();
-    for (const dep of allDeps) {
-      if (!depsByTaskId.has(dep.taskId)) depsByTaskId.set(dep.taskId, []);
-      depsByTaskId.get(dep.taskId)!.push(dep);
-    }
+    const batchResults = await canTasksExecuteBatch(candidateIds);
 
     for (const task of candidates) {
       try {
-        const deps = depsByTaskId.get(task.id) || [];
-        const blocking = deps.filter(
-          (d) => d.dependsOn.status !== 'Completed'
-        );
-        const executable = blocking.length === 0;
+        const depResult = batchResults.get(task.id);
+        const executable = depResult?.executable ?? true;
 
         if (executable) {
           await addTaskJob(task);
@@ -152,7 +129,7 @@ export async function tick(): Promise<void> {
           });
           blocked++;
           logger.info(
-            { taskId: task.id, blockedBy: blocking.map((d) => d.dependsOn.id) },
+            { taskId: task.id, blockedBy: depResult?.blockingDepIds },
             'Task blocked — dependencies not met'
           );
         }

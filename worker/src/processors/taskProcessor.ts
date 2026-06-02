@@ -63,22 +63,22 @@ async function processTrigger(job: Job<TaskJobPayload>): Promise<TaskProcessorRe
     throw new Error(`Dependencies not met: ${blockers}`);
   }
 
-  // ── 4. Transition Pending → Triggered ────────────────────────────────
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { status: 'Triggered' },
-  });
-
-  // ── 5. Audit log ────────────────────────────────────────────────────
-  await prisma.auditLog.create({
-    data: {
-      taskId,
-      action: 'UPDATED',
-      field: 'status',
-      oldValue: 'Pending',
-      newValue: 'Triggered',
-    },
-  });
+  // ── 4. Transition Pending → Triggered + audit log (atomic) ──────────
+  await prisma.$transaction([
+    prisma.task.update({
+      where: { id: taskId },
+      data: { status: 'Triggered' },
+    }),
+    prisma.auditLog.create({
+      data: {
+        taskId,
+        action: 'SYSTEM_UPDATED',
+        field: 'status',
+        oldValue: 'Pending',
+        newValue: 'Triggered',
+      },
+    }),
+  ]);
 
   log.info('Task status → Triggered');
 

@@ -221,16 +221,17 @@ async function update(id: string, data: UpdateTaskDTO, opts: UpdateTaskOptions =
     }
   }
 
-  // Apply update + audit in a transaction
+  // Apply update + audit in a transaction, returning the updated task
   const hasFieldUpdates = Object.keys(taskFields).length > 0;
 
-  await prisma.$transaction(async (tx) => {
+  const updatedTask = await prisma.$transaction(async (tx) => {
     if (hasFieldUpdates) {
       await tx.task.update({ where: { id }, data: taskFields as Prisma.TaskUpdateInput });
     }
     if (auditEntries.length > 0) {
       await tx.auditLog.createMany({ data: auditEntries });
     }
+    return tx.task.findUnique({ where: { id }, include: TASK_INCLUDE });
   });
 
   // Handle dependency changes outside the transaction (has its own)
@@ -251,10 +252,12 @@ async function update(id: string, data: UpdateTaskDTO, opts: UpdateTaskOptions =
         newDeps.join(',') || null,
         userId,
       );
+      // Dependencies changed — need fresh data with updated dependsOn
+      return getById(id);
     }
   }
 
-  return getById(id);
+  return formatTask(updatedTask as TaskWithIncludes);
 }
 
 // ── Delete ──────────────────────────────────────────────────────────────────

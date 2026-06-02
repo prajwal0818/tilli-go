@@ -39,18 +39,17 @@ async function getAppToken(): Promise<string> {
   return cachedToken.token;
 }
 
-export async function sendEmailViaGraph(
+function clearTokenCache(): void {
+  cachedToken = null;
+}
+
+async function sendGraphRequest(
+  token: string,
+  fromAddress: string,
   to: string,
   subject: string,
   htmlBody: string,
-): Promise<string> {
-  const token = await getAppToken();
-  const fromAddress = process.env.MICROSOFT_MAIL_FROM;
-
-  if (!fromAddress) {
-    throw new Error('MICROSOFT_MAIL_FROM is required for Graph email');
-  }
-
+): Promise<void> {
   await axios.post(
     `https://graph.microsoft.com/v1.0/users/${fromAddress}/sendMail`,
     {
@@ -69,6 +68,34 @@ export async function sendEmailViaGraph(
       timeout: 30000,
     },
   );
+}
+
+export async function sendEmailViaGraph(
+  to: string,
+  subject: string,
+  htmlBody: string,
+): Promise<string> {
+  const fromAddress = process.env.MICROSOFT_MAIL_FROM;
+
+  if (!fromAddress) {
+    throw new Error('MICROSOFT_MAIL_FROM is required for Graph email');
+  }
+
+  let token = await getAppToken();
+
+  try {
+    await sendGraphRequest(token, fromAddress, to, subject, htmlBody);
+  } catch (err: unknown) {
+    // Retry once with a fresh token on 401 (token may have been revoked)
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      logger.warn('Graph API returned 401 — refreshing token and retrying');
+      clearTokenCache();
+      token = await getAppToken();
+      await sendGraphRequest(token, fromAddress, to, subject, htmlBody);
+    } else {
+      throw err;
+    }
+  }
 
   const messageId = `graph-${Date.now()}`;
   logger.info({ to, subject, messageId }, 'Email sent via Microsoft Graph');
